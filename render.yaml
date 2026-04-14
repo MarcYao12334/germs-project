@@ -1,0 +1,58 @@
+# render.yaml - Render.com Blueprint (Free Tier)
+# Deploy: https://render.com/deploy -> Connect GitHub repo
+
+services:
+  # Backend NestJS
+  - type: web
+    name: germs-backend
+    runtime: node
+    region: frankfurt  # EU region
+    plan: free
+    buildCommand: cd backend && npm install && npm run build
+    startCommand: cd backend && npm run start:prod
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: DB_HOST
+        fromDatabase:
+          name: germs-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: germs-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: germs-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: germs-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: germs-db
+          property: password
+      - key: REDIS_HOST
+        value: # Set manually with Upstash URL
+      - key: REDIS_PORT
+        value: "6379"
+      - key: REDIS_PASSWORD
+        value: # Set manually with Upstash password
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        value: https://germs-dashboard.vercel.app
+
+databases:
+  - name: germs-db
+    plan: free
+    databaseName: germs_dev
+    user: germs_user
+    region: frankfurt
+    postgresMajorVersion: "16"
+    # Note: PostGIS must be enabled manually via Render console
+    # Run: CREATE EXTENSION IF NOT EXISTS postgis;

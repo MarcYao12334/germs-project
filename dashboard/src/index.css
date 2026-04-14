@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply text-gray-800 antialiased;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    margin: 0;
+    background: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 30%, #fefce8 60%, #fdf2f8 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #c7d2fe; border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover { background: #a5b4fc; }
+}
+
+@layer components {
+  .card { @apply bg-white/90 backdrop-blur-sm rounded-2xl border border-white/60 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_6px_24px_rgba(0,0,0,0.04)]; }
+  .btn-action {
+    @apply px-4 py-2.5 rounded-xl border-2 font-semibold text-[13px] transition-all duration-200 flex items-center gap-1.5 justify-center cursor-pointer select-none;
+  }
+  .btn-action:active { transform: scale(0.96); }
+  .btn-outline-green { @apply btn-action border-emerald-400 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-500 hover:shadow-[0_0_0_3px_rgba(16,185,129,0.1)]; }
+  .btn-outline-red { @apply btn-action border-red-400 text-red-600 hover:bg-red-50 hover:border-red-500 hover:shadow-[0_0_0_3px_rgba(239,68,68,0.1)]; }
+  .btn-outline-blue { @apply btn-action border-blue-400 text-blue-600 hover:bg-blue-50 hover:border-blue-500 hover:shadow-[0_0_0_3px_rgba(59,130,246,0.1)]; }
+  .btn-outline-gray { @apply btn-action border-gray-300 text-gray-600 hover:bg-gray-50 hover:border-gray-400; }
+  .btn-primary { @apply px-5 py-2.5 bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl font-semibold text-sm shadow-sm shadow-blue-500/25 transition-all; }
+  .btn-secondary { @apply px-5 py-2.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-xl font-semibold text-sm transition-all; }
+  .input-field { @apply w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 text-sm transition-all; }
+  .badge-pending { @apply px-3 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase bg-amber-50 text-amber-600 border border-amber-200; }
+  .badge-high { @apply px-3 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase bg-red-50 text-red-600 border border-red-200; }
+  .badge-active { @apply px-3 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase bg-emerald-50 text-emerald-600 border border-emerald-200; }
+  .badge-done { @apply px-3 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase bg-blue-50 text-blue-600 border border-blue-200; }
+}
+
+/* Animations */
+.pulse-dot {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.5); }
+  50% { box-shadow: 0 0 0 8px rgba(16,185,129,0); }
+}
+
+.fade-in { animation: fadeIn 0.3s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+.count-up { animation: countPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+@keyframes countPop { 0% { transform: scale(0.8); opacity: 0.5; } 100% { transform: scale(1); opacity: 1; } }
+
+.alert-pulse { animation: alertPulse 3s ease-in-out infinite; }
+@keyframes alertPulse {
+  0%, 100% { border-color: #fbbf24; }
+  50% { border-color: #f59e0b; box-shadow: 0 0 0 4px rgba(245,158,11,0.08); }
+}
+
+/* Leaflet overrides */
+.leaflet-container { font-family: 'Inter', sans-serif !important; }
+.leaflet-popup-content-wrapper { border-radius: 16px !important; box-shadow: 0 8px 32px rgba(0,0,0,0.12) !important; border: 1px solid rgba(0,0,0,0.04) !important; }
+.leaflet-popup-content { margin: 12px 16px !important; }
+.leaflet-popup-tip { box-shadow: none !important; }
+
+/* Map marker tooltip */
+.marker-label { background: white; border-radius: 10px; padding: 4px 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.06); font-weight: 600; font-size: 11px; }

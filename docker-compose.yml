@@ -1,0 +1,96 @@
+version: '3.9'
+
+services:
+  # ──────────────────────────────────────
+  # PostgreSQL + PostGIS (Base de données)
+  # ──────────────────────────────────────
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: germs-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: germs_dev
+      POSTGRES_USER: germs_user
+      POSTGRES_PASSWORD: germs_dev_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/docker/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U germs_user -d germs_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ──────────────────────────────────────
+  # Redis (Cache, Sessions, Pub/Sub, Queues)
+  # ──────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: germs-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ──────────────────────────────────────
+  # Backend NestJS (API + WebSocket)
+  # ──────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: germs-backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: germs_dev
+      DB_USER: germs_user
+      DB_PASSWORD: germs_dev_password
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: dev-jwt-secret-change-in-production
+      CORS_ORIGIN: http://localhost:5173
+    volumes:
+      - ./backend/src:/app/src
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ──────────────────────────────────────
+  # Dashboard React (Frontend Web)
+  # ──────────────────────────────────────
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+    container_name: germs-dashboard
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: http://localhost:3000
+      VITE_WS_URL: ws://localhost:3000
+    volumes:
+      - ./dashboard/src:/app/src
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  redis_data:
