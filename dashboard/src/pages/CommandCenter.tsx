@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { MapContainer, TileLayer, CircleMarker, Circle, Popup, Polyline, Tooltip } from 'react-leaflet';
 import { mockStats, mockAlerts, mockInterventions, mockTeams, Alert, Intervention, Team } from '../data/mockData';
 import { dashboardSync } from '../lib/dashboardSync';
@@ -134,7 +134,7 @@ function TeamTracker({ teams }: { teams: Team[] }) {
       {positions.map(team => {
         const intv = mockInterventions.find(i => i.equipe_id === team.id && i.statut !== 'TERMINE');
         return (
-          <span key={`team-${team.id}`}>
+          <React.Fragment key={`team-${team.id}`}>
             {intv && (
               <Polyline positions={[[team.lat, team.lng], [intv.lat, intv.lng]]}
                 pathOptions={{ color: '#10b981', weight: 2.5, dashArray: '10 8', opacity: 0.6 }} />
@@ -147,7 +147,7 @@ function TeamTracker({ teams }: { teams: Team[] }) {
               </Tooltip>
               <Popup><div className="text-xs"><p className="font-bold text-gray-900">{team.nom}</p><p className="text-gray-500">{team.unite} — {team.type_vehicule}</p></div></Popup>
             </CircleMarker>
-          </span>
+          </React.Fragment>
         );
       })}
     </>
@@ -612,11 +612,15 @@ export default function CommandCenter({ user, onLogout }: Props) {
   const pendingAlerts = alerts.filter(a => a.statut === 'PENDING');
 
   const handleValidate = useCallback((id: string) => {
-    setAlerts(prev => prev.map(a => a.id === id ? { ...a, statut: 'VALIDATED' as const } : a));
+    let foundAlert: any = null;
+    setAlerts(prev => {
+      foundAlert = prev.find(a => a.id === id);
+      return prev.map(a => a.id === id ? { ...a, statut: 'VALIDATED' as const } : a);
+    });
     setStats(s => ({ ...s, alertes_en_attente: Math.max(0, s.alertes_en_attente - 1), interventions_actives: s.interventions_actives + 1 }));
 
-    // Find the alert to build intervention
-    const alert = alerts.find(a => a.id === id);
+    // Use foundAlert from the functional updater
+    const alert = foundAlert;
     const availableTeam = mockTeams.find(t => t.statut === 'DISPONIBLE') || mockTeams[0];
     const intCode = `INT-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
@@ -643,7 +647,7 @@ export default function CommandCenter({ user, onLogout }: Props) {
         citoyen_telephone: alert?.citoyen_telephone,
       });
     }, 1500);
-  }, [alerts]);
+  }, []);
 
   const handleReject = useCallback((id: string) => {
     setAlerts(prev => prev.map(a => a.id === id ? { ...a, statut: 'REJECTED' as const } : a));
@@ -684,7 +688,7 @@ export default function CommandCenter({ user, onLogout }: Props) {
               };
               const col = c[intv.statut] || c.NOUVEAU;
               return (
-                <span key={`i-${intv.id}`}>
+                <React.Fragment key={`i-${intv.id}`}>
                   <CircleMarker center={[intv.lat, intv.lng]} radius={16}
                     pathOptions={{ color: col.stroke, fillColor: col.fill, fillOpacity: 0.5, weight: 3 }}>
                     <Tooltip permanent direction="top" offset={[0, -20]}
@@ -708,7 +712,7 @@ export default function CommandCenter({ user, onLogout }: Props) {
                     <Circle center={[intv.lat, intv.lng]} radius={500}
                       pathOptions={{ color: '#f59e0b', fillColor: '#f59e0b', fillOpacity: 0.02, weight: 1.5, dashArray: '8 6' }} />
                   )}
-                </span>
+                </React.Fragment>
               );
             })}
 

@@ -31,7 +31,7 @@ export interface TeamInfo {
 
 export interface SyncEvent {
   type: string; payload: any;
-  origin: 'dashboard' | 'citizen';
+  origin: 'dashboard' | 'citizen' | 'pro';
   ts: number;
 }
 

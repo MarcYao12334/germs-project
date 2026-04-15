@@ -18,17 +18,14 @@ import { ActiveAlert, TeamInfo } from './types';
 type Screen = 'onboarding' | 'register' | 'home' | 'report-location' | 'report-description' | 'report-confirm' | 'tracking' | 'rating' | 'history' | 'profile';
 
 export default function CitizenApp() {
-  const [screen, setScreen] = useState<Screen>('home');
-  const [activeAlert, setActiveAlert] = useState<ActiveAlert | null>(null);
+  const [screen, setScreen] = useState<Screen>(() => {
+    if (!storage.isOnboarded()) return 'onboarding';
+    if (!storage.getProfile()) return 'register';
+    return 'home';
+  });
+  const [activeAlert, setActiveAlert] = useState<ActiveAlert | null>(() => storage.getActiveAlert());
   const [reportData, setReportData] = useState<any>({});
   const [selectedCountry, setSelectedCountry] = useState('CI');
-
-  useEffect(() => {
-    if (!storage.isOnboarded()) { setScreen('onboarding'); return; }
-    if (!storage.getProfile()) { setScreen('register'); return; }
-    const saved = storage.getActiveAlert();
-    if (saved) setActiveAlert(saved);
-  }, []);
 
   useEffect(() => {
     if (activeAlert) storage.saveActiveAlert(activeAlert);
@@ -114,7 +111,7 @@ export default function CitizenApp() {
         {screen === 'register' && <Register onDone={() => setScreen('home')} initialCountry={selectedCountry} />}
         {screen === 'home' && <Home activeAlert={activeAlert} onSelectType={(type: string) => { setReportData({ type_incident: type }); setScreen('report-location'); }} onGoToTracking={() => setScreen('tracking')} />}
         {screen === 'report-location' && <ReportLocation onNext={(loc: any) => { setReportData((p: any) => ({ ...p, ...loc })); setScreen('report-description'); }} onBack={() => setScreen('home')} />}
-        {screen === 'report-description' && <ReportDescription reportData={reportData} onNext={(desc: any) => { setReportData((p: any) => ({ ...p, ...desc })); }} onSubmit={(finalData: any) => handleAlertCreated(finalData)} onBack={() => setScreen('report-location')} />}
+        {screen === 'report-description' && <ReportDescription reportData={reportData} onSubmit={(finalData: any) => handleAlertCreated(finalData)} onBack={() => setScreen('report-location')} />}
         {screen === 'report-confirm' && <ReportConfirm alert={activeAlert!} onGoToTracking={() => setScreen('tracking')} />}
         {screen === 'tracking' && <Tracking activeAlert={activeAlert} />}
         {screen === 'rating' && <Rating activeAlert={activeAlert} onDone={handleRatingDone} />}

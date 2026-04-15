@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Mission, myTeam } from '../lib/data';
+import { Mission } from '../lib/data';
 
 interface BilanData {
   missionId: string;
@@ -27,6 +27,7 @@ interface Props {
   mission: Mission;
   onSubmit: (bilan: BilanData) => void;
   onSkip: () => void;
+  team?: { nom: string; unite: string; chef: string; chef_grade: string; membres_count: number };
 }
 
 const actionOptions = [
@@ -35,9 +36,9 @@ const actionOptions = [
   'Securisation perimetre', 'Balisage', 'Recherche de personnes',
 ];
 
-export default function BilanForm({ mission, onSubmit, onSkip }: Props) {
+export default function BilanForm({ mission, onSubmit, onSkip, team }: Props) {
   const [vehicules, setVehicules] = useState(1);
-  const [personnel, setPersonnel] = useState(myTeam.membres.length);
+  const [personnel, setPersonnel] = useState(team?.membres_count || 4);
   const [victimesTotal, setVictimesTotal] = useState(0);
   const [deces, setDeces] = useState(0);
   const [graves, setGraves] = useState(0);
@@ -61,7 +62,7 @@ export default function BilanForm({ mission, onSubmit, onSkip }: Props) {
     const bilan: BilanData = {
       missionId: mission.id, code: mission.code,
       type_incident: mission.type_incident, adresse: mission.adresse,
-      equipe: myTeam.nom, unite: myTeam.unite, chef: `${myTeam.chef_grade} ${myTeam.chef}`,
+      equipe: team?.nom || 'Equipe', unite: team?.unite || 'Unite', chef: `${team?.chef_grade || 'Lt.'} ${team?.chef || 'Chef'}`,
       vehicules, personnel,
       victimes_total: victimesTotal, victimes_deces: deces,
       victimes_graves: graves, victimes_legers: legers, victimes_indemnes: indemnes,
@@ -154,7 +155,7 @@ export default function BilanForm({ mission, onSubmit, onSkip }: Props) {
         {/* Chef */}
         <div className="bg-gray-50 rounded-2xl p-3">
           <p className="text-xs text-gray-400 mb-0.5">Chef d'intervention</p>
-          <p className="text-sm font-bold text-gray-900">{myTeam.chef_grade} {myTeam.chef}</p>
+          <p className="text-sm font-bold text-gray-900">{team?.chef_grade || 'Lt.'} {team?.chef || 'Chef'}</p>
         </div>
 
         {/* Submit */}

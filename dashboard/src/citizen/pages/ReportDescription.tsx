@@ -3,7 +3,7 @@ import { storage } from '../lib/storage';
 import { citizenSync } from '../lib/sync';
 import { ActiveAlert, Alert } from '../types';
 
-interface Props { reportData: any; onNext: (d: any) => void; onSubmit: (a: ActiveAlert) => void; onBack: () => void; }
+interface Props { reportData: any; onSubmit: (a: ActiveAlert) => void; onBack: () => void; }
 
 export default function ReportDescription({ reportData, onSubmit, onBack }: Props) {
   const [description, setDescription] = useState('');
@@ -63,7 +63,7 @@ export default function ReportDescription({ reportData, onSubmit, onBack }: Prop
         <span className="text-2xl">{reportData.type_incident === 'Incendie' ? '🔥' : reportData.type_incident === 'Accident de route' ? '🚗' : '⚠️'}</span>
         <div>
           <p className="font-bold text-sm text-gray-900">{reportData.type_incident}</p>
-          <p className="text-[11px] text-gray-500 truncate">{reportData.adresse?.substring(0, 50)}...</p>
+          <p className="text-[11px] text-gray-500 truncate">{reportData.adresse?.length > 50 ? reportData.adresse.substring(0, 50) + '...' : reportData.adresse}</p>
         </div>
       </div>
 

@@ -148,8 +148,20 @@ export default function ProApp() {
         {screen === 'detail' && selectedMission && (
           <MissionDetail mission={selectedMission} onBack={() => setScreen('missions')} onStatusChange={handleStatusChange} onCall={handleCall} onNavigate={handleNavigate} />
         )}
+        {screen === 'detail' && !selectedMission && (
+          <div className="flex-1 flex flex-col items-center justify-center p-6">
+            <p className="text-gray-400 mb-4">Mission introuvable</p>
+            <button onClick={() => setScreen('missions')} className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold">Retour aux missions</button>
+          </div>
+        )}
         {screen === 'bilan' && selectedMission && (
-          <BilanForm mission={selectedMission} onSubmit={handleBilanSubmit} onSkip={() => setScreen('missions')} />
+          <BilanForm mission={selectedMission} onSubmit={handleBilanSubmit} onSkip={() => setScreen('missions')} team={team ? { nom: team.nom, unite: team.unite, chef: team.chef, chef_grade: team.chef_grade, membres_count: team.membres.length } : undefined} />
+        )}
+        {screen === 'bilan' && !selectedMission && (
+          <div className="flex-1 flex flex-col items-center justify-center p-6">
+            <p className="text-gray-400 mb-4">Mission introuvable</p>
+            <button onClick={() => setScreen('missions')} className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold">Retour aux missions</button>
+          </div>
         )}
         {screen === 'carte' && <MapScreen />}
         {screen === 'alertes' && <AlertsList missions={missions} onViewDetails={handleViewDetails} />}
