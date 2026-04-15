@@ -40,17 +40,23 @@ export default function Register({ onDone, initialCountry = 'CI' }: Props) {
   const [step, setStep] = useState<'form' | 'otp'>('form');
   const [otp, setOtp] = useState('');
   const [accepted, setAccepted] = useState(false);
+  const [generatedOtp, setGeneratedOtp] = useState('');
+  const generateOtp = () => String(Math.floor(100000 + Math.random() * 900000));
 
   const country = countriesData.find(c => c.code === pays) || countriesData[0];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email) { window.alert('L\'email est obligatoire'); return; }
     if (password !== confirm) { window.alert('Les mots de passe ne correspondent pas'); return; }
+    const code = generateOtp();
+    setGeneratedOtp(code);
     setStep('otp');
   };
 
   const handleVerify = (e: React.FormEvent) => {
     e.preventDefault();
+    if (otp !== generatedOtp) { window.alert('Code incorrect. Veuillez reessayer.'); return; }
     const profile: CitizenProfile = {
       id: `cit-${Date.now()}`, nom, prenoms,
       telephone: `${country.dial} ${telephone}`,
@@ -67,6 +73,10 @@ export default function Register({ onDone, initialCountry = 'CI' }: Props) {
         <h2 className="text-xl font-bold text-gray-900 mb-2 mt-8">Verification</h2>
         <p className="text-sm text-gray-500 mb-1">Code envoye par SMS au</p>
         <p className="text-sm font-bold text-gray-800 mb-6">{country.flag} {country.dial} {telephone}</p>
+        <div className="bg-amber-50 border border-amber-300 rounded-2xl px-4 py-2.5 mb-4 text-center">
+          <p className="text-[10px] text-amber-600 font-bold uppercase tracking-wider mb-1">Mode Test — Code de verification</p>
+          <p className="text-2xl font-mono font-extrabold text-amber-700 tracking-[0.3em]">{generatedOtp}</p>
+        </div>
         <form onSubmit={handleVerify} className="flex-1 flex flex-col">
           <input type="text" className="input-field text-center text-3xl tracking-[0.5em] font-mono py-5 mb-6" value={otp} onChange={e => setOtp(e.target.value)} placeholder="000000" maxLength={6} autoFocus />
           <div className="flex-1" />
@@ -128,8 +138,8 @@ export default function Register({ onDone, initialCountry = 'CI' }: Props) {
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-gray-500 mb-1">Email <span className="text-gray-300">(optionnel)</span></label>
-          <input type="email" className="input-field" value={email} onChange={e => setEmail(e.target.value)} placeholder="konan@email.com" />
+          <label className="block text-xs font-semibold text-gray-500 mb-1">Email <span className="text-red-400">*</span></label>
+          <input type="email" className="input-field" value={email} onChange={e => setEmail(e.target.value)} placeholder="konan@email.com" required />
         </div>
 
         <div className="grid grid-cols-2 gap-3">

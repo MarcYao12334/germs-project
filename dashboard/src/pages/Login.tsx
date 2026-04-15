@@ -52,32 +52,58 @@ export default function Login({ onLogin }: LoginProps) {
   const [regRole, setRegRole] = useState('OPERATEUR');
   const [regAuth, setRegAuth] = useState('sms');
   const [regOtp, setRegOtp] = useState('');
+  const [generatedOtp, setGeneratedOtp] = useState('');
+  const [loginOtp, setLoginOtp] = useState('');
+
+  const generateOtp = () => String(Math.floor(100000 + Math.random() * 900000));
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!telephone || !password) { window.alert('Veuillez remplir tous les champs'); return; }
     setLoading(true);
+    const code = generateOtp();
+    setLoginOtp(code);
     setTimeout(() => { setLoading(false); setStep('2fa'); }, 800);
   };
 
   const handleVerify2FA = (e: React.FormEvent) => {
     e.preventDefault();
+    if (otpCode !== loginOtp) { window.alert('Code incorrect. Veuillez reessayer.'); return; }
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      onLogin({ id: 'op1', nom: 'Konan', prenoms: 'J.', role: 'OPERATEUR', pays: countryCode, langue: 'fr' });
+      // Use stored account if exists, otherwise default
+      const stored = localStorage.getItem('germs_dashboard_accounts');
+      const accounts = stored ? JSON.parse(stored) : [];
+      const account = accounts.find((a: any) => a.telephone?.includes(telephone));
+      if (account) {
+        onLogin(account);
+      } else {
+        onLogin({ id: 'op1', nom: 'Konan', prenoms: 'J.', role: 'OPERATEUR', pays: countryCode, langue: 'fr' });
+      }
     }, 600);
   };
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!regEmail) { window.alert('L\'email est obligatoire'); return; }
     if (regPassword !== regConfirm) { window.alert('Les mots de passe ne correspondent pas'); return; }
     setLoading(true);
+    const code = generateOtp();
+    setGeneratedOtp(code);
     setTimeout(() => { setLoading(false); setStep('register-2fa'); }, 800);
   };
 
   const handleRegisterVerify = (e: React.FormEvent) => {
     e.preventDefault();
+    if (regOtp !== generatedOtp) { window.alert('Code incorrect. Veuillez reessayer.'); return; }
     setLoading(true);
+    // Save account locally
+    const account = { id: `user-${Date.now()}`, nom: regNom, prenoms: regPrenoms, telephone: `${regSelectedCountry.dial} ${regTelephone}`, email: regEmail, role: regRole, pays: regCountry, langue: 'fr' };
+    const stored = localStorage.getItem('germs_dashboard_accounts');
+    const accounts = stored ? JSON.parse(stored) : [];
+    accounts.push(account);
+    localStorage.setItem('germs_dashboard_accounts', JSON.stringify(accounts));
     setTimeout(() => { setLoading(false); setStep('register-success'); }, 600);
   };
 
@@ -161,6 +187,10 @@ export default function Login({ onLogin }: LoginProps) {
               <p className="text-sm text-gray-500 mb-5">
                 Code envoye via <span className="font-semibold text-gray-800">{authMethods.find(m => m.key === authMethod)?.label}</span> au {selectedCountry.dial} {telephone}
               </p>
+              <div className="bg-amber-50 border border-amber-300 rounded-xl px-4 py-2.5 mb-4 text-center">
+                <p className="text-[10px] text-amber-600 font-bold uppercase tracking-wider mb-1">Mode Test — Code de verification</p>
+                <p className="text-2xl font-mono font-extrabold text-amber-700 tracking-[0.3em]">{loginOtp}</p>
+              </div>
               <div className="mb-5">
                 <input type="text" className="input-field text-center text-3xl tracking-[0.5em] font-mono py-4" value={otpCode} onChange={e => setOtpCode(e.target.value)} placeholder="000000" maxLength={6} autoFocus />
               </div>
@@ -223,8 +253,8 @@ export default function Login({ onLogin }: LoginProps) {
 
               {/* Email */}
               <div className="mb-4">
-                <label className="block text-xs font-medium text-gray-500 mb-1">Email <span className="text-gray-300">(optionnel)</span></label>
-                <input type="email" className="input-field" value={regEmail} onChange={e => setRegEmail(e.target.value)} placeholder="operateur@germs.app" />
+                <label className="block text-xs font-medium text-gray-500 mb-1">Email <span className="text-red-400">*</span></label>
+                <input type="email" className="input-field" value={regEmail} onChange={e => setRegEmail(e.target.value)} placeholder="operateur@germs.app" required />
               </div>
 
               {/* Password */}
@@ -283,6 +313,10 @@ export default function Login({ onLogin }: LoginProps) {
               <p className="text-sm text-gray-500 mb-5">
                 au <span className="font-semibold text-gray-800">{regSelectedCountry.dial} {regTelephone}</span>
               </p>
+              <div className="bg-amber-50 border border-amber-300 rounded-xl px-4 py-2.5 mb-4 text-center">
+                <p className="text-[10px] text-amber-600 font-bold uppercase tracking-wider mb-1">Mode Test — Code de verification</p>
+                <p className="text-2xl font-mono font-extrabold text-amber-700 tracking-[0.3em]">{generatedOtp}</p>
+              </div>
               <div className="mb-5">
                 <input type="text" className="input-field text-center text-3xl tracking-[0.5em] font-mono py-4" value={regOtp} onChange={e => setRegOtp(e.target.value)} placeholder="000000" maxLength={6} autoFocus />
               </div>

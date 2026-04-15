@@ -33,6 +33,9 @@ export default function ProRegister({ onDone }: Props) {
 
   // OTP
   const [otp, setOtp] = useState('');
+  const [generatedOtp, setGeneratedOtp] = useState('');
+  const [email, setEmail] = useState('');
+  const generateOtp = () => String(Math.floor(100000 + Math.random() * 900000));
 
   const handleTeamSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,11 +57,14 @@ export default function ProRegister({ onDone }: Props) {
 
   const handleMembersSubmit = () => {
     if (membres.length < 2) { window.alert('Ajoutez au moins 1 membre en plus du chef'); return; }
+    const code = generateOtp();
+    setGeneratedOtp(code);
     setStep('otp');
   };
 
   const handleVerify = (e: React.FormEvent) => {
     e.preventDefault();
+    if (otp !== generatedOtp) { window.alert('Code incorrect. Veuillez reessayer.'); return; }
     const code = `EQ-${nomEquipe.replace(/\s/g, '').substring(0, 6).toUpperCase()}`;
     const team: ProTeam = {
       nom: nomEquipe,
@@ -109,6 +115,10 @@ export default function ProRegister({ onDone }: Props) {
             </div>
           </div>
 
+          <div>
+            <label className="block text-xs font-bold text-gray-500 mb-1">Email equipe *</label>
+            <input type="email" className="input-field" value={email} onChange={e => setEmail(e.target.value)} placeholder="equipe@gspm.ci" required />
+          </div>
           <div>
             <label className="block text-xs font-bold text-gray-500 mb-1">Telephone equipe *</label>
             <div className="flex gap-2">
@@ -223,6 +233,10 @@ export default function ProRegister({ onDone }: Props) {
         <p className="text-xs text-gray-500">Chef: {chefGrade} {chefPrenoms} {chefNom}</p>
       </div>
 
+      <div className="bg-amber-50 border border-amber-300 rounded-2xl px-4 py-2.5 mb-4 text-center">
+        <p className="text-[10px] text-amber-600 font-bold uppercase tracking-wider mb-1">Mode Test — Code de verification</p>
+        <p className="text-2xl font-mono font-extrabold text-amber-700 tracking-[0.3em]">{generatedOtp}</p>
+      </div>
       <form onSubmit={handleVerify} className="flex-1 flex flex-col">
         <input type="text" className="input-field text-center text-3xl tracking-[0.5em] font-mono py-5 mb-6" value={otp} onChange={e => setOtp(e.target.value)} placeholder="000000" maxLength={6} autoFocus />
         <div className="flex-1" />
