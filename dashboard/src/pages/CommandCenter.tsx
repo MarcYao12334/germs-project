@@ -14,25 +14,25 @@ function TopBar({ user, onLogout }: { user: any; onLogout: () => void }) {
   useEffect(() => { const i = setInterval(() => setTime(new Date()), 1000); return () => clearInterval(i); }, []);
 
   return (
-    <header className="bg-gradient-to-r from-gray-900 via-gray-900 to-gray-800 text-white h-14 flex items-center px-6 shrink-0 shadow-lg shadow-gray-900/10">
-      <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center text-lg shadow-lg shadow-red-500/20">
+    <header className="bg-gradient-to-r from-gray-900 via-gray-900 to-gray-800 text-white h-12 md:h-14 flex items-center px-3 md:px-6 shrink-0 shadow-lg shadow-gray-900/10">
+      <div className="flex items-center gap-2 md:gap-3">
+        <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center text-base md:text-lg shadow-lg shadow-red-500/20">
           🚒
         </div>
         <div>
-          <span className="font-bold text-[15px] tracking-tight">GERMS</span>
-          <span className="text-gray-400 font-normal text-[13px] ml-1.5">Centre de Commandement</span>
+          <span className="font-bold text-[13px] md:text-[15px] tracking-tight">GERMS</span>
+          <span className="text-gray-400 font-normal text-[11px] md:text-[13px] ml-1 hidden sm:inline">Centre de Commandement</span>
         </div>
       </div>
       <div className="flex-1" />
-      <div className="flex items-center gap-5 text-[13px]">
-        <span className="text-gray-400 font-mono">{time.toLocaleTimeString('fr-FR')}</span>
-        <div className="flex items-center gap-2 bg-emerald-500/15 px-3 py-1.5 rounded-lg">
+      <div className="flex items-center gap-2 md:gap-5 text-[11px] md:text-[13px]">
+        <span className="text-gray-400 font-mono hidden md:inline">{time.toLocaleTimeString('fr-FR')}</span>
+        <div className="flex items-center gap-1.5 bg-emerald-500/15 px-2 md:px-3 py-1 md:py-1.5 rounded-lg">
           <span className="w-2 h-2 rounded-full bg-emerald-400 pulse-dot" />
-          <span className="text-emerald-400 font-semibold text-xs">EN LIGNE</span>
+          <span className="text-emerald-400 font-semibold text-[10px] md:text-xs hidden sm:inline">EN LIGNE</span>
         </div>
-        <div className="h-5 w-px bg-gray-700" />
-        <div className="flex items-center gap-2">
+        <div className="h-5 w-px bg-gray-700 hidden md:block" />
+        <div className="flex items-center gap-2 hidden md:flex">
           <div className="w-7 h-7 rounded-lg bg-gray-700 flex items-center justify-center text-xs font-bold text-gray-300">
             {user.prenoms?.[0]}{user.nom?.[0]}
           </div>
@@ -40,7 +40,10 @@ function TopBar({ user, onLogout }: { user: any; onLogout: () => void }) {
           <span className="text-gray-600">|</span>
           <span className="text-gray-500">CI-Abidjan</span>
         </div>
-        <button onClick={onLogout} className="text-gray-500 hover:text-red-400 transition-colors text-xs font-medium ml-1">Deconnexion</button>
+        <button onClick={onLogout} className="text-gray-500 hover:text-red-400 transition-colors text-xs font-medium ml-1">
+          <span className="hidden sm:inline">Deconnexion</span>
+          <span className="sm:hidden">✕</span>
+        </button>
       </div>
     </header>
   );
@@ -59,18 +62,18 @@ function KpiBar({ stats }: { stats: typeof mockStats }) {
   ];
 
   return (
-    <div className="bg-white border-b border-gray-100 px-6 py-3">
-      <div className="grid grid-cols-5 gap-4">
+    <div className="bg-white border-b border-gray-100 px-3 md:px-6 py-2 md:py-3">
+      <div className="grid grid-cols-3 md:grid-cols-5 gap-2 md:gap-4">
         {kpis.map((kpi, i) => (
-          <div key={i} className="flex items-center gap-3 py-1 group cursor-default">
-            <div className={`w-10 h-10 rounded-xl ${kpi.iconBg} flex items-center justify-center text-lg transition-transform group-hover:scale-110`}>
+          <div key={i} className="flex items-center gap-2 md:gap-3 py-1 group cursor-default">
+            <div className={`w-8 h-8 md:w-10 md:h-10 rounded-xl ${kpi.iconBg} flex items-center justify-center text-sm md:text-lg transition-transform group-hover:scale-110 shrink-0`}>
               {kpi.icon}
             </div>
-            <div>
-              <p className={`text-2xl font-extrabold bg-gradient-to-r ${kpi.color} bg-clip-text text-transparent count-up leading-none`}>
+            <div className="min-w-0">
+              <p className={`text-lg md:text-2xl font-extrabold bg-gradient-to-r ${kpi.color} bg-clip-text text-transparent count-up leading-none`}>
                 {kpi.value}{kpi.suffix}
               </p>
-              <p className="text-[11px] text-gray-400 mt-0.5 font-medium">{kpi.label}</p>
+              <p className="text-[9px] md:text-[11px] text-gray-400 mt-0.5 font-medium truncate">{kpi.label}</p>
             </div>
           </div>
         ))}
@@ -377,16 +380,16 @@ function RapportsSection({ rapports }: { rapports: any[] }) {
     <div className="mx-3 mb-3 mt-1">
       <div className="card p-5">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-3">
           <div>
-            <h3 className="text-[15px] font-bold text-gray-900">📋 Rapports d'intervention</h3>
+            <h3 className="text-[15px] font-bold text-gray-900">Rapports d'intervention</h3>
             <p className="text-xs text-gray-500">{filtered.length} rapport(s) — {range.label}</p>
           </div>
           {filtered.length > 0 && (
-            <div className="flex gap-2">
-              <button onClick={() => exportPDF(filtered, range.label)} className="px-3 py-1.5 rounded-lg bg-red-50 text-red-600 border border-red-200 text-xs font-bold hover:bg-red-100 transition-colors">📄 PDF</button>
-              <button onClick={() => exportExcel(filtered, range.label)} className="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-200 text-xs font-bold hover:bg-emerald-100 transition-colors">📊 Excel</button>
-              <button onClick={() => exportWord(filtered, range.label)} className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 border border-blue-200 text-xs font-bold hover:bg-blue-100 transition-colors">📝 Word</button>
+            <div className="flex gap-2 shrink-0">
+              <button onClick={() => exportPDF(filtered, range.label)} className="px-3 py-1.5 rounded-lg bg-red-50 text-red-600 border border-red-200 text-xs font-bold hover:bg-red-100 transition-colors">PDF</button>
+              <button onClick={() => exportExcel(filtered, range.label)} className="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-200 text-xs font-bold hover:bg-emerald-100 transition-colors">Excel</button>
+              <button onClick={() => exportWord(filtered, range.label)} className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 border border-blue-200 text-xs font-bold hover:bg-blue-100 transition-colors">Word</button>
             </div>
           )}
         </div>
@@ -407,7 +410,7 @@ function RapportsSection({ rapports }: { rapports: any[] }) {
 
         {/* Stats summary */}
         {filtered.length > 0 && (
-          <div className="grid grid-cols-4 gap-3 mb-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
             <div className="bg-blue-50 rounded-xl p-3 text-center">
               <p className="text-lg font-extrabold text-blue-600">{filtered.length}</p>
               <p className="text-[10px] text-blue-500 font-medium">Interventions</p>
@@ -665,9 +668,9 @@ export default function CommandCenter({ user, onLogout }: Props) {
       {/* Main area — scrollable */}
       <div className="flex-1 overflow-y-auto">
         {/* Map + Side Panel */}
-        <div className="flex" style={{ height: '60vh', minHeight: '400px' }}>
+        <div className="flex flex-col lg:flex-row" style={{ minHeight: '400px' }}>
         {/* ── MAP ── */}
-        <div className="flex-1 relative m-3 mr-1.5 rounded-2xl overflow-hidden shadow-lg shadow-gray-900/5 border border-gray-200/50">
+        <div className="relative m-2 md:m-3 lg:mr-1.5 rounded-2xl overflow-hidden shadow-lg shadow-gray-900/5 border border-gray-200/50 h-[40vh] lg:h-auto lg:flex-1">
           <MapLegend />
           <MapContainer center={[5.3400, -4.0100]} zoom={13} style={{ height: '100%', width: '100%' }} zoomControl={false}>
             <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" attribution="CARTO" />
@@ -734,7 +737,7 @@ export default function CommandCenter({ user, onLogout }: Props) {
         </div>
 
         {/* ── SIDE PANEL ── */}
-        <div className="w-[440px] bg-white m-3 ml-1.5 rounded-2xl shadow-lg shadow-gray-900/5 border border-gray-200/50 flex flex-col shrink-0 overflow-hidden">
+        <div className="w-full lg:w-[440px] bg-white m-2 md:m-3 lg:ml-1.5 rounded-2xl shadow-lg shadow-gray-900/5 border border-gray-200/50 flex flex-col shrink-0 overflow-hidden lg:max-h-[60vh]">
           {/* Tabs */}
           <div className="flex border-b border-gray-100 px-1 pt-1">
             {tabs.map(t => (
