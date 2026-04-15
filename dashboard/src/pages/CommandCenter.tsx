@@ -171,9 +171,10 @@ function Stars({ score }: { score: number }) {
 // ════════════════════════════════════════════
 //  ALERT ITEM (side panel)
 // ════════════════════════════════════════════
-function AlertItem({ alert, onValidate, onReject, onMerge, onCall }: {
+function AlertItem({ alert, onValidate, onReject, onMerge, onCall, selected, onClick }: {
   alert: Alert; onValidate: (id: string) => void; onReject: (id: string) => void;
   onMerge: (id: string) => void; onCall: (tel: string) => void;
+  selected?: boolean; onClick?: () => void;
 }) {
   const icons: Record<string, string> = {
     'Incendie': '🔥', 'Accident de route': '🚗', 'Fuite de gaz': '💧',
@@ -182,7 +183,7 @@ function AlertItem({ alert, onValidate, onReject, onMerge, onCall }: {
   const time = new Date(alert.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
   return (
-    <div className={`py-4 border-b border-gray-100 last:border-b-0 fade-in ${alert.similar_alert_nearby ? 'alert-pulse border-l-4 border-l-amber-400 pl-3' : ''}`}>
+    <div onClick={onClick} className={`py-4 border-b border-gray-100 last:border-b-0 fade-in cursor-pointer transition-all rounded-xl px-2 ${selected ? 'bg-amber-50 ring-2 ring-amber-400/30 shadow-sm' : 'hover:bg-amber-50/30'} ${alert.similar_alert_nearby && !selected ? 'alert-pulse border-l-4 border-l-amber-400 pl-3' : ''}`}>
       {/* Header */}
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-2">
@@ -310,13 +311,13 @@ function InterventionItem({ intv, selected, onClick }: { intv: Intervention; sel
 // ════════════════════════════════════════════
 //  TEAM ITEM
 // ════════════════════════════════════════════
-function TeamItem({ team }: { team: Team }) {
+function TeamItem({ team, selected, onClick }: { team: Team; selected?: boolean; onClick?: () => void }) {
   const dots: Record<string, string> = { DISPONIBLE: 'bg-emerald-500', EN_MISSION: 'bg-red-500', RETOUR_CASERNE: 'bg-blue-500' };
   const labels: Record<string, string> = { DISPONIBLE: 'Disponible', EN_MISSION: 'En mission', RETOUR_CASERNE: 'Retour' };
   const dotColors: Record<string, string> = { DISPONIBLE: 'shadow-emerald-500/30', EN_MISSION: 'shadow-red-500/30', RETOUR_CASERNE: 'shadow-blue-500/30' };
 
   return (
-    <div className="py-3.5 border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors rounded-lg px-1 cursor-pointer fade-in">
+    <div onClick={onClick} className={`py-3.5 border-b border-gray-100 last:border-b-0 hover:bg-emerald-50/30 transition-all rounded-xl px-2 cursor-pointer fade-in ${selected ? 'bg-emerald-50 ring-2 ring-emerald-400/30 shadow-sm' : ''}`}>
       <div className="flex items-center gap-3">
         <div className="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center text-base shrink-0">🚒</div>
         <div className="flex-1 min-w-0">
@@ -585,11 +586,26 @@ export default function CommandCenter({ user, onLogout }: Props) {
   const [tab, setTab] = useState<'alerts' | 'interventions' | 'teams'>('alerts');
   const [rapports, setRapports] = useState<any[]>([]);
   const [selectedIntvId, setSelectedIntvId] = useState<string | null>(null);
+  const [selectedAlertId, setSelectedAlertId] = useState<string | null>(null);
+  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [mapTarget, setMapTarget] = useState<{ lat: number; lng: number } | null>(null);
 
   const handleIntvClick = useCallback((intv: Intervention) => {
     setSelectedIntvId(prev => prev === intv.id ? null : intv.id);
+    setSelectedAlertId(null); setSelectedTeamId(null);
     setMapTarget({ lat: intv.lat, lng: intv.lng });
+  }, []);
+
+  const handleAlertClick = useCallback((alert: Alert) => {
+    setSelectedAlertId(prev => prev === alert.id ? null : alert.id);
+    setSelectedIntvId(null); setSelectedTeamId(null);
+    setMapTarget({ lat: alert.lat, lng: alert.lng });
+  }, []);
+
+  const handleTeamClick = useCallback((team: Team) => {
+    setSelectedTeamId(prev => prev === team.id ? null : team.id);
+    setSelectedIntvId(null); setSelectedAlertId(null);
+    setMapTarget({ lat: team.lat, lng: team.lng });
   }, []);
 
   useEffect(() => {
@@ -738,9 +754,11 @@ export default function CommandCenter({ user, onLogout }: Props) {
               );
             })}
 
-            {pendingAlerts.map(alert => (
-              <CircleMarker key={`a-${alert.id}`} center={[alert.lat, alert.lng]} radius={14}
-                pathOptions={{ color: '#f59e0b', fillColor: '#fbbf2430', fillOpacity: 0.4, weight: 3 }}>
+            {pendingAlerts.map(alert => {
+              const isSelAlert = selectedAlertId === alert.id;
+              return (
+              <CircleMarker key={`a-${alert.id}`} center={[alert.lat, alert.lng]} radius={isSelAlert ? 22 : 14}
+                pathOptions={{ color: '#f59e0b', fillColor: '#fbbf2430', fillOpacity: isSelAlert ? 0.7 : 0.4, weight: isSelAlert ? 5 : 3 }}>
                 <Tooltip permanent direction="top" offset={[0, -18]}
                   className="!bg-white !border !border-amber-200 !shadow-lg !rounded-xl !px-2.5 !py-1.5 !text-[11px]">
                   <div className="text-center leading-tight">
@@ -756,7 +774,8 @@ export default function CommandCenter({ user, onLogout }: Props) {
                   </div>
                 </Popup>
               </CircleMarker>
-            ))}
+              );
+            })}
 
             <TeamTracker teams={mockTeams} />
           </MapContainer>
@@ -788,10 +807,10 @@ export default function CommandCenter({ user, onLogout }: Props) {
             {tab === 'alerts' && (
               pendingAlerts.length === 0
                 ? <div className="flex flex-col items-center justify-center h-40 text-gray-300"><p className="text-3xl mb-2">✅</p><p className="text-sm font-medium">Aucune alerte en attente</p></div>
-                : pendingAlerts.map(a => <AlertItem key={a.id} alert={a} onValidate={handleValidate} onReject={handleReject} onMerge={handleMerge} onCall={handleCall} />)
+                : pendingAlerts.map(a => <AlertItem key={a.id} alert={a} onValidate={handleValidate} onReject={handleReject} onMerge={handleMerge} onCall={handleCall} selected={selectedAlertId === a.id} onClick={() => handleAlertClick(a)} />)
             )}
             {tab === 'interventions' && mockInterventions.map(i => <InterventionItem key={i.id} intv={i} selected={selectedIntvId === i.id} onClick={() => handleIntvClick(i)} />)}
-            {tab === 'teams' && mockTeams.map(t => <TeamItem key={t.id} team={t} />)}
+            {tab === 'teams' && mockTeams.map(t => <TeamItem key={t.id} team={t} selected={selectedTeamId === t.id} onClick={() => handleTeamClick(t)} />)}
           </div>
         </div>
         </div>
