@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { MapContainer, TileLayer, CircleMarker, Circle, Popup, Polyline, Tooltip } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker, Circle, Popup, Polyline, Tooltip, useMap } from 'react-leaflet';
 import { mockStats, mockAlerts, mockInterventions, mockTeams, Alert, Intervention, Team } from '../data/mockData';
 import { dashboardSync } from '../lib/dashboardSync';
 import 'leaflet/dist/leaflet.css';
@@ -255,9 +255,22 @@ function AlertItem({ alert, onValidate, onReject, onMerge, onCall }: {
 }
 
 // ════════════════════════════════════════════
+//  MAP CONTROLLER (fly to location on click)
+// ════════════════════════════════════════════
+function MapController({ target }: { target: { lat: number; lng: number } | null }) {
+  const map = useMap();
+  useEffect(() => {
+    if (target) {
+      map.flyTo([target.lat, target.lng], 16, { duration: 1.2 });
+    }
+  }, [target, map]);
+  return null;
+}
+
+// ════════════════════════════════════════════
 //  INTERVENTION ITEM
 // ════════════════════════════════════════════
-function InterventionItem({ intv }: { intv: Intervention }) {
+function InterventionItem({ intv, selected, onClick }: { intv: Intervention; selected?: boolean; onClick?: () => void }) {
   const conf: Record<string, { bg: string; dot: string; label: string }> = {
     NOUVEAU: { bg: 'bg-red-50 text-red-600 border-red-200', dot: 'bg-red-500', label: 'Nouveau' },
     EN_ROUTE: { bg: 'bg-purple-50 text-purple-600 border-purple-200', dot: 'bg-purple-500', label: 'En route' },
@@ -268,7 +281,7 @@ function InterventionItem({ intv }: { intv: Intervention }) {
   const st = conf[intv.statut] || conf.NOUVEAU;
 
   return (
-    <div className="py-3.5 border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors rounded-lg px-1 cursor-pointer fade-in">
+    <div onClick={onClick} className={`py-3.5 border-b border-gray-100 last:border-b-0 hover:bg-blue-50/50 transition-all rounded-xl px-2 cursor-pointer fade-in ${selected ? 'bg-blue-50 ring-2 ring-blue-400/30 shadow-sm' : ''}`}>
       <div className="flex items-center gap-3">
         <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center text-base shrink-0">
           {icons[intv.type_incident] || '🚒'}
@@ -571,6 +584,13 @@ export default function CommandCenter({ user, onLogout }: Props) {
   const [alerts, setAlerts] = useState<Alert[]>(mockAlerts);
   const [tab, setTab] = useState<'alerts' | 'interventions' | 'teams'>('alerts');
   const [rapports, setRapports] = useState<any[]>([]);
+  const [selectedIntvId, setSelectedIntvId] = useState<string | null>(null);
+  const [mapTarget, setMapTarget] = useState<{ lat: number; lng: number } | null>(null);
+
+  const handleIntvClick = useCallback((intv: Intervention) => {
+    setSelectedIntvId(prev => prev === intv.id ? null : intv.id);
+    setMapTarget({ lat: intv.lat, lng: intv.lng });
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -677,6 +697,7 @@ export default function CommandCenter({ user, onLogout }: Props) {
         <div className="relative m-2 md:m-3 lg:mr-1.5 rounded-2xl overflow-hidden shadow-lg shadow-gray-900/5 border border-gray-200/50 h-[40vh] lg:h-auto lg:flex-1">
           <MapLegend />
           <MapContainer center={[5.3400, -4.0100]} zoom={13} style={{ height: '100%', width: '100%' }} zoomControl={false}>
+            <MapController target={mapTarget} />
             <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" attribution="CARTO" />
 
             {mockInterventions.map(intv => {
@@ -687,10 +708,11 @@ export default function CommandCenter({ user, onLogout }: Props) {
                 TERMINE: { stroke: '#3b82f6', fill: '#3b82f640' },
               };
               const col = c[intv.statut] || c.NOUVEAU;
+              const isSelected = selectedIntvId === intv.id;
               return (
                 <React.Fragment key={`i-${intv.id}`}>
-                  <CircleMarker center={[intv.lat, intv.lng]} radius={16}
-                    pathOptions={{ color: col.stroke, fillColor: col.fill, fillOpacity: 0.5, weight: 3 }}>
+                  <CircleMarker center={[intv.lat, intv.lng]} radius={isSelected ? 24 : 16}
+                    pathOptions={{ color: col.stroke, fillColor: col.fill, fillOpacity: isSelected ? 0.8 : 0.5, weight: isSelected ? 5 : 3 }}>
                     <Tooltip permanent direction="top" offset={[0, -20]}
                       className="!bg-white !border !border-gray-200 !shadow-lg !rounded-xl !px-2.5 !py-1.5 !text-[11px]">
                       <div className="text-center leading-tight">
@@ -768,7 +790,7 @@ export default function CommandCenter({ user, onLogout }: Props) {
                 ? <div className="flex flex-col items-center justify-center h-40 text-gray-300"><p className="text-3xl mb-2">✅</p><p className="text-sm font-medium">Aucune alerte en attente</p></div>
                 : pendingAlerts.map(a => <AlertItem key={a.id} alert={a} onValidate={handleValidate} onReject={handleReject} onMerge={handleMerge} onCall={handleCall} />)
             )}
-            {tab === 'interventions' && mockInterventions.map(i => <InterventionItem key={i.id} intv={i} />)}
+            {tab === 'interventions' && mockInterventions.map(i => <InterventionItem key={i.id} intv={i} selected={selectedIntvId === i.id} onClick={() => handleIntvClick(i)} />)}
             {tab === 'teams' && mockTeams.map(t => <TeamItem key={t.id} team={t} />)}
           </div>
         </div>
