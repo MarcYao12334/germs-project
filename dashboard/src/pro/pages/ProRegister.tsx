@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ProTeam } from '../lib/data';
 import { proStorage } from '../lib/storage';
+import { proSync } from '../lib/sync';
 
 const grades = ['Commandant', 'Capitaine', 'Lieutenant', 'Sergent-Chef', 'Sergent', 'Caporal-Chef', 'Caporal', 'Sapeur 1C', 'Sapeur'];
 const roles = ["Chef d'equipe", 'Conducteur', 'Equipier', 'Secouriste', 'Infirmier', 'Plongeur', 'Specialiste'];
@@ -76,6 +77,8 @@ export default function ProRegister({ onDone }: Props) {
     };
     proStorage.saveTeam(team);
     proStorage.setLoggedIn();
+    // Notify Dashboard
+    proSync.send('team:registered', { ...team, type_vehicule: typeVehicule, immatriculation, telephone });
     onDone(team);
   };
 

@@ -86,11 +86,13 @@ export default function MissionDetail({ mission, onBack, onStatusChange, onCall,
           </div>
         )}
 
-        {/* Navigation */}
-        <button onClick={() => onNavigate(mission.lat, mission.lng)}
-          className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2">
-          🧭 Lancer la navigation GPS
-        </button>
+        {/* Navigation — only if not terminated */}
+        {mission.statut !== 'TERMINE' && (
+          <button onClick={() => onNavigate(mission.lat, mission.lng)}
+            className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+            🧭 Lancer la navigation GPS
+          </button>
+        )}
 
         {/* Status update */}
         {mission.statut !== 'TERMINE' && (

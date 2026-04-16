@@ -65,9 +65,14 @@ export default function ProApp() {
   };
 
   const handleAccept = (id: string) => {
+    const mission = missions.find(m => m.id === id);
     setMissions(prev => prev.map(m => m.id === id ? { ...m, statut: 'EN_ROUTE' as const } : m));
     proSync.send('intervention:status-changed', { interventionId: id, statut: 'EN_ROUTE' });
     setSelectedId(id);
+    // Ouvrir la navigation GPS automatiquement
+    if (mission && mission.lat && mission.lng) {
+      window.open(`https://www.google.com/maps/dir/?api=1&destination=${mission.lat},${mission.lng}&travelmode=driving`, '_blank');
+    }
     setScreen('detail');
   };
 

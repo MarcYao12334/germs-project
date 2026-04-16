@@ -634,9 +634,12 @@ export default function CommandCenter({ user, onLogout }: Props) {
       setStats(s => ({ ...s, alertes_en_attente: s.alertes_en_attente + 1 }));
     });
 
-    // Listen for Pro firefighter status changes
+    // Listen for Pro firefighter status changes → update interventions
     const unsub2 = dashboardSync.on('intervention:status-changed', (p: any) => {
       console.log('[Dashboard] Pro status change:', p.statut);
+      setInterventions(prev => prev.map(i =>
+        i.id === p.interventionId ? { ...i, statut: p.statut, arrivee_at: p.statut === 'SUR_PLACE' ? new Date().toISOString() : i.arrivee_at, fin_at: p.statut === 'TERMINE' ? new Date().toISOString() : i.fin_at } : i
+      ));
     });
 
     // Listen for bilan reports from Pro
@@ -645,7 +648,25 @@ export default function CommandCenter({ user, onLogout }: Props) {
       setRapports(prev => [bilan, ...prev]);
     });
 
-    return () => { unsub1(); unsub2(); unsub3(); };
+    // Listen for Pro team registration
+    const unsub4 = dashboardSync.on('team:registered', (teamData: any) => {
+      console.log('[Dashboard] New team registered:', teamData.nom);
+      const newTeam: Team = {
+        id: teamData.code || `team-${Date.now()}`, nom: teamData.nom, unite: teamData.unite,
+        type_vehicule: teamData.type_vehicule || 'Camion', immatriculation: teamData.immatriculation || '',
+        telephone: teamData.telephone || '', code_equipe: teamData.code,
+        pays: 'CI', note_moyenne: 0, actif: true,
+        lat: 5.34 + (Math.random() - 0.5) * 0.02, lng: -4.01 + (Math.random() - 0.5) * 0.02,
+        statut: 'DISPONIBLE' as const,
+        membres: teamData.membres || [],
+      };
+      setTeams(prev => {
+        if (prev.some(t => t.id === newTeam.id)) return prev;
+        return [...prev, newTeam];
+      });
+    });
+
+    return () => { unsub1(); unsub2(); unsub3(); unsub4(); };
   }, []);
 
   const pendingAlerts = alerts.filter(a => a.statut === 'PENDING');
