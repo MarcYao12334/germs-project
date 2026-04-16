@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { MapContainer, TileLayer, CircleMarker, Circle, Popup, Polyline, Tooltip, useMap } from 'react-leaflet';
-import { mockStats, mockAlerts, mockInterventions, mockTeams, Alert, Intervention, Team } from '../data/mockData';
+import { mockStats, Alert, Intervention, Team } from '../data/mockData';
 import { dashboardSync } from '../lib/dashboardSync';
 import 'leaflet/dist/leaflet.css';
 
@@ -132,7 +132,7 @@ function TeamTracker({ teams }: { teams: Team[] }) {
   return (
     <>
       {positions.map(team => {
-        const intv = mockInterventions.find(i => i.equipe_id === team.id && i.statut !== 'TERMINE');
+        const intv = null; // No mock interventions — team routes will be dynamic
         return (
           <React.Fragment key={`team-${team.id}`}>
             {intv && (
@@ -581,8 +581,11 @@ ${rapports.map((r, i) => `
 //  MAIN COMMAND CENTER
 // ════════════════════════════════════════════
 export default function CommandCenter({ user, onLogout }: Props) {
-  const [stats, setStats] = useState(mockStats);
-  const [alerts, setAlerts] = useState<Alert[]>(mockAlerts);
+  const emptyStats = { interventions_actives: 0, alertes_en_attente: 0, equipes_disponibles: 0, temps_moyen_minutes: 0, taux_reussite: 0 };
+  const [stats, setStats] = useState(emptyStats);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [interventions, setInterventions] = useState<Intervention[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [tab, setTab] = useState<'alerts' | 'interventions' | 'teams'>('alerts');
   const [rapports, setRapports] = useState<any[]>([]);
   const [selectedIntvId, setSelectedIntvId] = useState<string | null>(null);
@@ -608,16 +611,16 @@ export default function CommandCenter({ user, onLogout }: Props) {
     setMapTarget({ lat: team.lat, lng: team.lng });
   }, []);
 
+  // Stats are now computed from real data
   useEffect(() => {
-    const interval = setInterval(() => {
-      setStats(s => ({
-        ...s,
-        temps_moyen_minutes: Math.round((s.temps_moyen_minutes + (Math.random() - 0.5) * 2) * 10) / 10,
-        taux_reussite: Math.min(100, Math.max(85, Math.round((s.taux_reussite + (Math.random() - 0.5)) * 10) / 10)),
-      }));
-    }, 4000);
-    return () => clearInterval(interval);
-  }, []);
+    setStats({
+      interventions_actives: interventions.filter(i => i.statut !== 'TERMINE').length,
+      alertes_en_attente: alerts.filter(a => a.statut === 'PENDING').length,
+      equipes_disponibles: teams.length,
+      temps_moyen_minutes: 0,
+      taux_reussite: interventions.length > 0 ? Math.round(interventions.filter(i => i.statut === 'TERMINE').length / interventions.length * 100) : 0,
+    });
+  }, [alerts, interventions, teams]);
 
   // ── BroadcastChannel: receive citizen alerts + pro status updates ──
   useEffect(() => {
@@ -657,7 +660,7 @@ export default function CommandCenter({ user, onLogout }: Props) {
 
     // Use foundAlert from the functional updater
     const alert = foundAlert;
-    const availableTeam = mockTeams.find(t => t.statut === 'DISPONIBLE') || mockTeams[0];
+    const availableTeam = teams.find(t => t.statut === 'DISPONIBLE') || teams[0] || { nom: 'Equipe Alpha', unite: 'GSPM', type_vehicule: 'Camion', note_moyenne: 4.5 };
     const intCode = `INT-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
     // Send sync events to citizen
@@ -671,14 +674,22 @@ export default function CommandCenter({ user, onLogout }: Props) {
         note_moyenne: availableTeam.note_moyenne,
         eta_minutes: 6, distance_km: 3.2,
       });
-      dashboardSync.send('intervention:created', {
+      const newIntv: Intervention = {
         id: `intv-${Date.now()}`, code: intCode,
         type_incident: alert?.type_incident || 'Urgence',
+        priorite: 'HAUTE' as const, statut: 'NOUVEAU' as const,
+        source: 'ALERTE', alerte_principale_id: id,
+        lat: alert?.lat || 5.34, lng: alert?.lng || -4.01,
+        adresse: alert?.adresse || '', equipe_id: null,
+        equipe_nom: availableTeam.nom, equipe_unite: availableTeam.unite,
+        operateur_id: 'op1', debut_at: new Date().toISOString(),
+        arrivee_at: null, fin_at: null, pays: 'CI', bilan: null,
+        eta_minutes: 6, distance_km: 3.2, created_at: new Date().toISOString(),
+      };
+      setInterventions(prev => [newIntv, ...prev]);
+      dashboardSync.send('intervention:created', {
+        ...newIntv,
         description: alert?.description || '',
-        adresse: alert?.adresse || '',
-        lat: alert?.lat || 5.34,
-        lng: alert?.lng || -4.01,
-        equipe_nom: availableTeam.nom, statut: 'NOUVEAU',
         citoyen_nom: alert?.citoyen_nom ? `${alert.citoyen_prenoms} ${alert.citoyen_nom}` : undefined,
         citoyen_telephone: alert?.citoyen_telephone,
       });
@@ -696,8 +707,8 @@ export default function CommandCenter({ user, onLogout }: Props) {
 
   const tabs = [
     { key: 'alerts' as const, label: 'Alertes', count: pendingAlerts.length, color: 'bg-amber-500' },
-    { key: 'interventions' as const, label: 'Interventions', count: mockInterventions.length, color: 'bg-blue-500' },
-    { key: 'teams' as const, label: 'Equipes', count: mockTeams.length, color: 'bg-gray-500' },
+    { key: 'interventions' as const, label: 'Interventions', count: interventions.length, color: 'bg-blue-500' },
+    { key: 'teams' as const, label: 'Equipes', count: teams.length, color: 'bg-gray-500' },
   ];
 
   return (
@@ -716,7 +727,7 @@ export default function CommandCenter({ user, onLogout }: Props) {
             <MapController target={mapTarget} />
             <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" attribution="CARTO" />
 
-            {mockInterventions.map(intv => {
+            {interventions.map(intv => {
               const c: Record<string, { stroke: string; fill: string }> = {
                 NOUVEAU: { stroke: '#ef4444', fill: '#ef444450' },
                 EN_ROUTE: { stroke: '#22c55e', fill: '#22c55e40' },
@@ -777,7 +788,7 @@ export default function CommandCenter({ user, onLogout }: Props) {
               );
             })}
 
-            <TeamTracker teams={mockTeams} />
+            <TeamTracker teams={teams} />
           </MapContainer>
         </div>
 
@@ -809,8 +820,14 @@ export default function CommandCenter({ user, onLogout }: Props) {
                 ? <div className="flex flex-col items-center justify-center h-40 text-gray-300"><p className="text-3xl mb-2">✅</p><p className="text-sm font-medium">Aucune alerte en attente</p></div>
                 : pendingAlerts.map(a => <AlertItem key={a.id} alert={a} onValidate={handleValidate} onReject={handleReject} onMerge={handleMerge} onCall={handleCall} selected={selectedAlertId === a.id} onClick={() => handleAlertClick(a)} />)
             )}
-            {tab === 'interventions' && mockInterventions.map(i => <InterventionItem key={i.id} intv={i} selected={selectedIntvId === i.id} onClick={() => handleIntvClick(i)} />)}
-            {tab === 'teams' && mockTeams.map(t => <TeamItem key={t.id} team={t} selected={selectedTeamId === t.id} onClick={() => handleTeamClick(t)} />)}
+            {tab === 'interventions' && (interventions.length === 0
+              ? <div className="flex flex-col items-center justify-center h-40 text-gray-300"><p className="text-3xl mb-2">🚒</p><p className="text-sm font-medium">Aucune intervention</p></div>
+              : interventions.map(i => <InterventionItem key={i.id} intv={i} selected={selectedIntvId === i.id} onClick={() => handleIntvClick(i)} />)
+            )}
+            {tab === 'teams' && (teams.length === 0
+              ? <div className="flex flex-col items-center justify-center h-40 text-gray-300"><p className="text-3xl mb-2">👥</p><p className="text-sm font-medium">Aucune equipe connectee</p></div>
+              : teams.map(t => <TeamItem key={t.id} team={t} selected={selectedTeamId === t.id} onClick={() => handleTeamClick(t)} />)
+            )}
           </div>
         </div>
         </div>

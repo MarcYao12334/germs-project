@@ -10,14 +10,14 @@ import TeamView from './pages/TeamView';
 import MapScreen from './pages/MapScreen';
 import { proSync } from './lib/sync';
 import { proStorage } from './lib/storage';
-import { initialMissions, Mission, ProTeam } from './lib/data';
+import { Mission, ProTeam } from './lib/data';
 
 type Screen = 'register' | 'missions' | 'detail' | 'bilan' | 'carte' | 'alertes' | 'equipe';
 
 export default function ProApp() {
   const [team, setTeam] = useState<ProTeam | null>(proStorage.getTeam());
   const [screen, setScreen] = useState<Screen>(team ? 'missions' : 'register');
-  const [missions, setMissions] = useState<Mission[]>(initialMissions);
+  const [missions, setMissions] = useState<Mission[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   // Listen for new missions from Dashboard
