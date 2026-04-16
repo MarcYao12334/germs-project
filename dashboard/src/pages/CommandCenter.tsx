@@ -679,21 +679,39 @@ export default function CommandCenter({ user, onLogout }: Props) {
     });
     setStats(s => ({ ...s, alertes_en_attente: Math.max(0, s.alertes_en_attente - 1), interventions_actives: s.interventions_actives + 1 }));
 
-    // Use foundAlert from the functional updater
     const alert = foundAlert;
-    const availableTeam = teams.find(t => t.statut === 'DISPONIBLE') || teams[0] || { nom: 'Equipe Alpha', unite: 'GSPM', type_vehicule: 'Camion', note_moyenne: 4.5 };
+
+    // Find the closest available team by distance
+    const availableTeams = teams.filter(t => t.statut === 'DISPONIBLE');
+    let closestTeam = availableTeams[0] || teams[0] || { id: 'default', nom: 'Equipe', unite: 'GSPM', type_vehicule: 'Camion', note_moyenne: 4.5, lat: 5.34, lng: -4.01, code_equipe: 'EQ-DEFAULT' };
+
+    if (alert && availableTeams.length > 0) {
+      let minDist = Infinity;
+      for (const t of availableTeams) {
+        const dist = Math.sqrt(Math.pow(t.lat - alert.lat, 2) + Math.pow(t.lng - alert.lng, 2));
+        if (dist < minDist) { minDist = dist; closestTeam = t; }
+      }
+    }
+
+    // Calculate distance in km (approximate)
+    const distKm = alert ? Math.round(Math.sqrt(Math.pow((closestTeam.lat - alert.lat) * 111, 2) + Math.pow((closestTeam.lng - alert.lng) * 111 * Math.cos(alert.lat * Math.PI / 180), 2)) * 10) / 10 : 3;
+    const etaMin = Math.max(1, Math.round(distKm * 2)); // ~2 min per km
+
+    // Mark the team as EN_MISSION
+    setTeams(prev => prev.map(t => t.id === closestTeam.id ? { ...t, statut: 'EN_MISSION' as const } : t));
+
     const intCode = `INT-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
     // Send sync events to citizen
     dashboardSync.send('alert:validated', { alertId: id });
 
-    // Team assignment + mission to Pro after 1.5s
+    // Team assignment + mission to the CLOSEST team only
     setTimeout(() => {
       dashboardSync.send('team:assigned', {
-        nom: availableTeam.nom, unite: availableTeam.unite,
-        type_vehicule: availableTeam.type_vehicule,
-        note_moyenne: availableTeam.note_moyenne,
-        eta_minutes: 6, distance_km: 3.2,
+        nom: closestTeam.nom, unite: closestTeam.unite,
+        type_vehicule: closestTeam.type_vehicule,
+        note_moyenne: closestTeam.note_moyenne,
+        eta_minutes: etaMin, distance_km: distKm,
       });
       const newIntv: Intervention = {
         id: `intv-${Date.now()}`, code: intCode,
@@ -701,21 +719,22 @@ export default function CommandCenter({ user, onLogout }: Props) {
         priorite: 'HAUTE' as const, statut: 'NOUVEAU' as const,
         source: 'ALERTE', alerte_principale_id: id,
         lat: alert?.lat || 5.34, lng: alert?.lng || -4.01,
-        adresse: alert?.adresse || '', equipe_id: null,
-        equipe_nom: availableTeam.nom, equipe_unite: availableTeam.unite,
+        adresse: alert?.adresse || '', equipe_id: closestTeam.id,
+        equipe_nom: closestTeam.nom, equipe_unite: closestTeam.unite,
         operateur_id: 'op1', debut_at: new Date().toISOString(),
         arrivee_at: null, fin_at: null, pays: 'CI', bilan: null,
-        eta_minutes: 6, distance_km: 3.2, created_at: new Date().toISOString(),
+        eta_minutes: etaMin, distance_km: distKm, created_at: new Date().toISOString(),
       };
       setInterventions(prev => [newIntv, ...prev]);
       dashboardSync.send('intervention:created', {
         ...newIntv,
+        targetTeamCode: closestTeam.code_equipe,
         description: alert?.description || '',
         citoyen_nom: alert?.citoyen_nom ? `${alert.citoyen_prenoms} ${alert.citoyen_nom}` : undefined,
         citoyen_telephone: alert?.citoyen_telephone,
       });
     }, 1500);
-  }, []);
+  }, [teams]);
 
   const handleReject = useCallback((id: string) => {
     setAlerts(prev => prev.map(a => a.id === id ? { ...a, statut: 'REJECTED' as const } : a));

@@ -20,11 +20,16 @@ export default function ProApp() {
   const [missions, setMissions] = useState<Mission[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  // Listen for new missions from Dashboard
+  // Listen for new missions from Dashboard — only for THIS team
   useEffect(() => {
     const unsubs = [
       proSync.on('intervention:created', (p: any) => {
-        console.log('[Pro] New mission received:', p);
+        // Only accept missions targeted to this team (or no target = broadcast)
+        if (p.targetTeamCode && team && p.targetTeamCode !== team.code) {
+          console.log('[Pro] Mission ignored — targeted to', p.targetTeamCode, 'not', team?.code);
+          return;
+        }
+        console.log('[Pro] New mission received:', p.code);
         const newMission: Mission = {
           id: p.id || `mi-${Date.now()}`,
           code: p.code,
@@ -36,14 +41,18 @@ export default function ProApp() {
           adresse: p.adresse || 'Adresse inconnue',
           lat: p.lat || 5.34,
           lng: p.lng || -4.01,
-          distance_km: 2.5,
-          eta_minutes: 5,
+          distance_km: p.distance_km || 2.5,
+          eta_minutes: p.eta_minutes || 5,
           citoyen_nom: p.citoyen_nom,
           citoyen_telephone: p.citoyen_telephone,
           equipe_assignee: true,
           created_at: new Date().toISOString(),
         };
-        setMissions(prev => [newMission, ...prev]);
+        // Dedup: don't add if mission with same id already exists
+        setMissions(prev => {
+          if (prev.some(m => m.id === newMission.id)) return prev;
+          return [newMission, ...prev];
+        });
       }),
       proSync.on('intervention:status-changed', (p: any) => {
         setMissions(prev => prev.map(m =>
