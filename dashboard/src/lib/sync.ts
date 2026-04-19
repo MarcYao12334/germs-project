@@ -1,5 +1,5 @@
-// Universal sync — WebSocket + BroadcastChannel + localStorage polling
-// Triple fallback ensures messages are never lost
+// Cross-device sync via WebSocket (primary) + BroadcastChannel (same-browser fallback)
+// No localStorage polling — WebSocket is the source of truth for cross-device
 import { io, Socket } from 'socket.io-client';
 
 interface SyncEvent {
@@ -10,48 +10,92 @@ interface SyncEvent {
 }
 
 type Handler = (payload: any) => void;
+type ConnectionCallback = (connected: boolean) => void;
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3001';
-const STORAGE_KEY = 'germs_sync_queue';
-const POLL_INTERVAL = 3000; // 3 seconds
+const KEEPALIVE_INTERVAL = 4 * 60 * 1000; // 4 minutes
 
 class GermsSyncChannel {
   private socket: Socket | null = null;
   private bc: BroadcastChannel | null = null;
   private listeners = new Map<string, Set<Handler>>();
+  private connectionListeners = new Set<ConnectionCallback>();
   private myOrigin: 'dashboard' | 'citizen' | 'pro';
   private connected = false;
-  private lastProcessedTs = Date.now();
-  private pollTimer: ReturnType<typeof setInterval> | null = null;
+  private lastProcessedTs = 0;
+  private pendingEvents: SyncEvent[] = []; // Events sent while disconnected
+  private keepAliveTimer: ReturnType<typeof setInterval> | null = null;
+  private processedIds = new Set<string>(); // Dedup
 
   constructor(origin: 'dashboard' | 'citizen' | 'pro') {
     this.myOrigin = origin;
+    this.lastProcessedTs = Date.now() - 600000; // Start 10 min ago to catch recent events
 
-    // 1. WebSocket (cross-device)
+    // 1. WebSocket (cross-device — PRIMARY channel)
     try {
       this.socket = io(WS_URL, {
         transports: ['websocket', 'polling'],
         reconnection: true,
-        reconnectionDelay: 2000,
-        reconnectionAttempts: 100,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        reconnectionAttempts: Infinity,
+        timeout: 30000,
       });
+
       this.socket.on('connect', () => {
         this.connected = true;
-        console.log(`[Sync:${origin}] WebSocket connected`);
+        console.log(`[Sync:${origin}] Connected to ${WS_URL}`);
+        this.notifyConnection(true);
+
+        // Request missed events since last known timestamp
+        this.socket!.emit('sync-catchup', { lastTs: this.lastProcessedTs });
+
+        // Flush pending events (sent while disconnected)
+        if (this.pendingEvents.length > 0) {
+          console.log(`[Sync:${origin}] Flushing ${this.pendingEvents.length} pending events`);
+          for (const event of this.pendingEvents) {
+            this.socket!.emit('sync-event', event);
+          }
+          this.pendingEvents = [];
+        }
       });
-      this.socket.on('disconnect', () => {
+
+      this.socket.on('disconnect', (reason) => {
         this.connected = false;
-        console.log(`[Sync:${origin}] WebSocket disconnected`);
+        console.log(`[Sync:${origin}] Disconnected: ${reason}`);
+        this.notifyConnection(false);
       });
+
+      this.socket.on('connect_error', (err) => {
+        console.log(`[Sync:${origin}] Connection error: ${err.message}`);
+        this.notifyConnection(false);
+      });
+
+      // Receive live events
       this.socket.on('sync-event', (event: SyncEvent) => {
         if (event.origin === this.myOrigin) return;
         this.dispatch(event);
       });
+
+      // Receive catchup response (missed events)
+      this.socket.on('sync-catchup-response', (data: { events: SyncEvent[] }) => {
+        console.log(`[Sync:${origin}] Catchup: ${data.events.length} missed events`);
+        for (const event of data.events) {
+          if (event.origin === this.myOrigin) continue;
+          this.dispatch(event);
+        }
+      });
+
+      // Keep-alive acknowledgment
+      this.socket.on('keep-alive-ack', () => {
+        // Connection is alive
+      });
+
     } catch (err) {
-      console.log(`[Sync:${origin}] WebSocket unavailable`);
+      console.log(`[Sync:${origin}] WebSocket init failed`);
     }
 
-    // 2. BroadcastChannel (same-browser)
+    // 2. BroadcastChannel (same-browser instant fallback)
     try {
       this.bc = new BroadcastChannel('germs-sync');
       this.bc.onmessage = (e) => {
@@ -61,61 +105,53 @@ class GermsSyncChannel {
       };
     } catch {}
 
-    // 3. localStorage polling (ultimate fallback — works cross-tab, cross-port)
-    this.pollTimer = setInterval(() => this.pollStorage(), POLL_INTERVAL);
-    // Also listen for storage events (instant when same origin)
-    window.addEventListener('storage', (e) => {
-      if (e.key === STORAGE_KEY && e.newValue) this.pollStorage();
-    });
-
-    console.log(`[Sync:${origin}] Initialized — WS: ${WS_URL} — Poll: ${POLL_INTERVAL}ms`);
-  }
-
-  private pollStorage() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      const queue: SyncEvent[] = JSON.parse(raw);
-      const newEvents = queue.filter(e => e.origin !== this.myOrigin && e.ts > this.lastProcessedTs);
-      for (const event of newEvents) {
-        this.lastProcessedTs = event.ts;
-        this.dispatch(event);
+    // 3. Keep-alive ping every 4 min
+    this.keepAliveTimer = setInterval(() => {
+      if (this.socket && this.connected) {
+        this.socket.emit('keep-alive');
       }
-    } catch {}
+      // Also ping the server HTTP endpoint to prevent sleep
+      fetch(`${WS_URL}/ping`).catch(() => {});
+    }, KEEPALIVE_INTERVAL);
+
+    console.log(`[Sync:${origin}] Initialized — WS: ${WS_URL}`);
   }
 
   private dispatch(event: SyncEvent) {
-    // Dedup: update lastProcessedTs
+    // Dedup by timestamp + type + origin
+    const eventId = `${event.ts}-${event.type}-${event.origin}`;
+    if (this.processedIds.has(eventId)) return;
+    this.processedIds.add(eventId);
+    // Keep dedup set small
+    if (this.processedIds.size > 500) {
+      const arr = Array.from(this.processedIds);
+      this.processedIds = new Set(arr.slice(-250));
+    }
+
     if (event.ts > this.lastProcessedTs) this.lastProcessedTs = event.ts;
+
     const handlers = this.listeners.get(event.type);
     if (handlers && handlers.size > 0) {
-      console.log(`[Sync:${this.myOrigin}] Received ${event.type} from ${event.origin}`);
+      console.log(`[Sync:${this.myOrigin}] ← ${event.type} from ${event.origin}`);
       handlers.forEach(h => h(event.payload));
     }
   }
 
   send(type: string, payload: any) {
     const event: SyncEvent = { type, payload, origin: this.myOrigin, ts: Date.now() };
-    console.log(`[Sync:${this.myOrigin}] Sending: ${type}`);
+    console.log(`[Sync:${this.myOrigin}] → ${type}`);
 
-    // 1. WebSocket
+    // WebSocket (primary — cross-device)
     if (this.socket && this.connected) {
       this.socket.emit('sync-event', event);
+    } else {
+      // Store for later flush when reconnected
+      this.pendingEvents.push(event);
+      console.log(`[Sync:${this.myOrigin}] Queued (offline): ${type} (${this.pendingEvents.length} pending)`);
     }
 
-    // 2. BroadcastChannel
+    // BroadcastChannel (same-browser instant)
     try { this.bc?.postMessage(event); } catch {}
-
-    // 3. localStorage queue (always write — guaranteed delivery)
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      const queue: SyncEvent[] = raw ? JSON.parse(raw) : [];
-      queue.push(event);
-      // Keep last 100 events, max 5 min old
-      const cutoff = Date.now() - 300000;
-      const trimmed = queue.filter(e => e.ts > cutoff).slice(-100);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
-    } catch {}
   }
 
   on(type: string, handler: Handler): () => void {
@@ -124,11 +160,27 @@ class GermsSyncChannel {
     return () => { this.listeners.get(type)?.delete(handler); };
   }
 
+  onConnection(callback: ConnectionCallback): () => void {
+    this.connectionListeners.add(callback);
+    // Immediately notify current state
+    callback(this.connected);
+    return () => { this.connectionListeners.delete(callback); };
+  }
+
+  private notifyConnection(connected: boolean) {
+    this.connectionListeners.forEach(cb => cb(connected));
+  }
+
+  isConnected(): boolean {
+    return this.connected;
+  }
+
   destroy() {
-    if (this.pollTimer) clearInterval(this.pollTimer);
+    if (this.keepAliveTimer) clearInterval(this.keepAliveTimer);
     this.socket?.disconnect();
     this.bc?.close();
     this.listeners.clear();
+    this.connectionListeners.clear();
   }
 }
 
