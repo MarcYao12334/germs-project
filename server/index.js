@@ -87,7 +87,9 @@ const SELF_URL = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
 setInterval(() => {
   const url = `${SELF_URL}/ping`;
   console.log(`[KeepAlive] Self-ping: ${url}`);
-  fetch(url).catch(() => {});
+  // Use native http to avoid Node.js version issues with fetch
+  const lib = url.startsWith('https') ? require('https') : require('http');
+  lib.get(url, () => {}).on('error', () => {});
 }, 4 * 60 * 1000); // Every 4 minutes
 
 server.listen(PORT, () => {

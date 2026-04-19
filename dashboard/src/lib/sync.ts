@@ -12,7 +12,9 @@ interface SyncEvent {
 type Handler = (payload: any) => void;
 type ConnectionCallback = (connected: boolean) => void;
 
-const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3001';
+// Detect environment: if on Vercel (not localhost), use the Render URL
+const isProduction = typeof window !== 'undefined' && !window.location.hostname.includes('localhost');
+const WS_URL = import.meta.env.VITE_WS_URL || (isProduction ? 'https://germs-project.onrender.com' : 'http://localhost:3001');
 const KEEPALIVE_INTERVAL = 4 * 60 * 1000; // 4 minutes
 
 class GermsSyncChannel {
