@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import MobileShell from './components/MobileShell';
 import BottomNav from './components/BottomNav';
 import ProRegister from './pages/ProRegister';
@@ -114,6 +114,16 @@ export default function ProApp() {
     setScreen('carte');
   };
 
+  // Auto-arrival: when team reaches the incident location, auto-set SUR_PLACE
+  const handleArrived = useCallback((missionId: string) => {
+    const mission = missions.find(m => m.id === missionId);
+    if (mission && (mission.statut === 'EN_ROUTE' || mission.statut === 'NOUVEAU')) {
+      console.log('[Pro] Auto-arrival detected for', missionId);
+      setMissions(prev => prev.map(m => m.id === missionId ? { ...m, statut: 'SUR_PLACE' as const } : m));
+      proSync.send('intervention:status-changed', { interventionId: missionId, statut: 'SUR_PLACE' });
+    }
+  }, [missions]);
+
   const handleNav = (tab: string) => {
     if (tab === 'missions' || tab === 'carte' || tab === 'alertes' || tab === 'equipe') {
       setScreen(tab as Screen);
@@ -184,7 +194,7 @@ export default function ProApp() {
             <button onClick={() => setScreen('missions')} className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold">Retour aux missions</button>
           </div>
         )}
-        {screen === 'carte' && <MapScreen target={mapTarget} missions={missions} onViewDetails={handleViewDetails} />}
+        {screen === 'carte' && <MapScreen target={mapTarget} missions={missions} onViewDetails={handleViewDetails} onArrived={handleArrived} />}
         {screen === 'alertes' && <AlertsList missions={missions} onViewDetails={handleViewDetails} />}
         {screen === 'equipe' && <TeamView team={team} onTeamUpdate={handleTeamUpdate} onLogout={handleLogout} />}
       </div>
