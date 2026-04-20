@@ -127,9 +127,25 @@ export default function ProApp() {
   if (screen === 'register' || !team) {
     return (
       <MobileShell>
-        <header className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white px-5 py-3.5 shrink-0">
-          <h1 className="font-bold text-[15px] tracking-tight">GERMS Pro</h1>
-          <p className="text-xs text-gray-400">Application Pompiers / Secouristes</p>
+        <header
+          className="shrink-0 px-5 py-4"
+          style={{
+            background: 'linear-gradient(135deg, #050d1a 0%, #0a1628 60%, #0d1f35 100%)',
+            borderBottom: '1px solid rgba(255,255,255,0.04)',
+          }}
+        >
+          <h1
+            className="font-bold text-[15px] tracking-tight text-white font-display"
+            style={{ fontFamily: 'Sora, sans-serif' }}
+          >
+            GERMS Pro
+          </h1>
+          <p
+            className="text-[11px] text-slate-500 font-body"
+            style={{ fontFamily: 'Manrope, sans-serif' }}
+          >
+            Application Pompiers / Secouristes
+          </p>
         </header>
         <ProRegister onDone={handleRegistered} />
       </MobileShell>
@@ -143,38 +159,99 @@ export default function ProApp() {
   return (
     <MobileShell>
       {/* Top bar */}
-      <header className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white px-5 py-3.5 shrink-0">
+      <header
+        className="shrink-0 px-5 py-3.5"
+        style={{
+          background: 'linear-gradient(135deg, #050d1a 0%, #0a1628 60%, #0d1f35 100%)',
+          borderBottom: '1px solid rgba(255,255,255,0.04)',
+        }}
+      >
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-bold text-[15px] tracking-tight">GERMS Pro</h1>
-            <p className="text-xs text-gray-400">{team.nom} — {team.unite}</p>
+            <h1
+              className="font-bold text-[15px] tracking-tight text-white font-display"
+              style={{ fontFamily: 'Sora, sans-serif' }}
+            >
+              GERMS Pro
+            </h1>
+            <p
+              className="text-[11px] text-slate-500 font-body"
+              style={{ fontFamily: 'Manrope, sans-serif' }}
+            >
+              {team.nom} &mdash; {team.unite}
+            </p>
           </div>
           <div className="text-right">
-            <p className="text-[10px] text-gray-400">Chef d'equipe</p>
-            <p className="text-xs font-semibold">{team.chef_grade.substring(0, 3)}. {team.chef.split(' ')[0]} {team.chef.split(' ')[1]?.[0]}.</p>
+            <p
+              className="text-[9px] text-slate-600 tracking-widest uppercase font-body"
+              style={{ fontFamily: 'Manrope, sans-serif' }}
+            >
+              Chef
+            </p>
+            <p
+              className="text-[11px] font-semibold text-slate-300 font-body"
+              style={{ fontFamily: 'Manrope, sans-serif' }}
+            >
+              {team.chef_grade.substring(0, 3)}. {team.chef.split(' ')[0]} {team.chef.split(' ')[1]?.[0]}.
+            </p>
           </div>
         </div>
       </header>
 
       {/* Content */}
       <div className="flex-1 overflow-hidden flex flex-col">
-        {screen === 'missions' && <Missions missions={missions} onViewDetails={handleViewDetails} onAccept={handleAccept} />}
+        {screen === 'missions' && (
+          <Missions missions={missions} onViewDetails={handleViewDetails} onAccept={handleAccept} />
+        )}
         {screen === 'detail' && selectedMission && (
-          <MissionDetail mission={selectedMission} onBack={() => setScreen('missions')} onStatusChange={handleStatusChange} onCall={handleCall} onNavigate={handleNavigate} />
+          <MissionDetail
+            mission={selectedMission}
+            onBack={() => setScreen('missions')}
+            onStatusChange={handleStatusChange}
+            onCall={handleCall}
+            onNavigate={handleNavigate}
+          />
         )}
         {screen === 'detail' && !selectedMission && (
           <div className="flex-1 flex flex-col items-center justify-center p-6">
-            <p className="text-gray-400 mb-4">Mission introuvable</p>
-            <button onClick={() => setScreen('missions')} className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold">Retour aux missions</button>
+            <p
+              className="text-slate-500 mb-4 font-body"
+              style={{ fontFamily: 'Manrope, sans-serif' }}
+            >
+              Mission introuvable
+            </p>
+            <button
+              onClick={() => setScreen('missions')}
+              className="px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all active:scale-[0.97] font-body"
+              style={{ background: 'linear-gradient(180deg, #0891b2 0%, #0e7490 100%)', fontFamily: 'Manrope, sans-serif' }}
+            >
+              Retour aux missions
+            </button>
           </div>
         )}
         {screen === 'bilan' && selectedMission && (
-          <BilanForm mission={selectedMission} onSubmit={handleBilanSubmit} onSkip={() => setScreen('missions')} team={team ? { nom: team.nom, unite: team.unite, chef: team.chef, chef_grade: team.chef_grade, membres_count: team.membres.length } : undefined} />
+          <BilanForm
+            mission={selectedMission}
+            onSubmit={handleBilanSubmit}
+            onSkip={() => setScreen('missions')}
+            team={team ? { nom: team.nom, unite: team.unite, chef: team.chef, chef_grade: team.chef_grade, membres_count: team.membres.length } : undefined}
+          />
         )}
         {screen === 'bilan' && !selectedMission && (
           <div className="flex-1 flex flex-col items-center justify-center p-6">
-            <p className="text-gray-400 mb-4">Mission introuvable</p>
-            <button onClick={() => setScreen('missions')} className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold">Retour aux missions</button>
+            <p
+              className="text-slate-500 mb-4 font-body"
+              style={{ fontFamily: 'Manrope, sans-serif' }}
+            >
+              Mission introuvable
+            </p>
+            <button
+              onClick={() => setScreen('missions')}
+              className="px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all active:scale-[0.97] font-body"
+              style={{ background: 'linear-gradient(180deg, #0891b2 0%, #0e7490 100%)', fontFamily: 'Manrope, sans-serif' }}
+            >
+              Retour aux missions
+            </button>
           </div>
         )}
         {screen === 'carte' && <MapScreen />}
@@ -182,7 +259,9 @@ export default function ProApp() {
         {screen === 'equipe' && <TeamView team={team} onTeamUpdate={handleTeamUpdate} onLogout={handleLogout} />}
       </div>
 
-      {showNav && <BottomNav active={screen} onNavigate={handleNav} missionCount={activeMissions.length} />}
+      {showNav && (
+        <BottomNav active={screen} onNavigate={handleNav} missionCount={activeMissions.length} />
+      )}
     </MobileShell>
   );
 }

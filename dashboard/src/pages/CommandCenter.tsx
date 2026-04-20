@@ -14,33 +14,54 @@ function TopBar({ user, onLogout }: { user: any; onLogout: () => void }) {
   useEffect(() => { const i = setInterval(() => setTime(new Date()), 1000); return () => clearInterval(i); }, []);
 
   return (
-    <header className="bg-gradient-to-r from-gray-900 via-gray-900 to-gray-800 text-white h-12 md:h-14 flex items-center px-3 md:px-6 shrink-0 shadow-lg shadow-gray-900/10">
+    <header
+      className="bg-command-950 text-white h-12 md:h-14 flex items-center px-3 md:px-6 shrink-0"
+      style={{
+        borderBottom: '1px solid rgba(180,83,9,0.2)',
+        boxShadow: '0 1px 0 rgba(255,255,255,0.03), 0 4px 24px rgba(2,6,23,0.8)',
+      }}
+    >
       <div className="flex items-center gap-2 md:gap-3">
-        <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center text-base md:text-lg shadow-lg shadow-red-500/20">
+        <div
+          className="w-8 h-8 md:w-9 md:h-9 rounded-xl flex items-center justify-center text-base md:text-lg shrink-0"
+          style={{
+            background: 'linear-gradient(135deg, #b45309 0%, #d97706 60%, #0891b2 100%)',
+            boxShadow: '0 0 16px rgba(180,83,9,0.4)',
+          }}
+        >
           🚒
         </div>
         <div>
-          <span className="font-bold text-[13px] md:text-[15px] tracking-tight">GERMS</span>
-          <span className="text-gray-400 font-normal text-[11px] md:text-[13px] ml-1 hidden sm:inline">Centre de Commandement</span>
+          <span className="font-display font-bold text-[13px] md:text-[15px] tracking-tight text-command-100">GERMS</span>
+          <span className="font-body font-normal text-[11px] md:text-[13px] ml-2 hidden sm:inline text-command-600">Centre de Commandement</span>
         </div>
       </div>
       <div className="flex-1" />
       <div className="flex items-center gap-2 md:gap-5 text-[11px] md:text-[13px]">
-        <span className="text-gray-400 font-mono hidden md:inline">{time.toLocaleTimeString('fr-FR')}</span>
-        <div className="flex items-center gap-1.5 bg-emerald-500/15 px-2 md:px-3 py-1 md:py-1.5 rounded-lg">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 pulse-dot" />
-          <span className="text-emerald-400 font-semibold text-[10px] md:text-xs hidden sm:inline">EN LIGNE</span>
+        <span className="font-mono hidden md:inline text-command-700">{time.toLocaleTimeString('fr-FR')}</span>
+        <div
+          className="flex items-center gap-1.5 px-2 md:px-3 py-1 md:py-1.5 rounded-lg"
+          style={{ background: 'rgba(34,211,238,0.08)', border: '1px solid rgba(34,211,238,0.25)' }}
+        >
+          <span className="w-2 h-2 rounded-full pulse-dot" style={{ backgroundColor: '#22d3ee' }} />
+          <span className="font-body font-bold text-[10px] md:text-xs hidden sm:inline text-accent-400">EN LIGNE</span>
         </div>
-        <div className="h-5 w-px bg-gray-700 hidden md:block" />
-        <div className="flex items-center gap-2 hidden md:flex">
-          <div className="w-7 h-7 rounded-lg bg-gray-700 flex items-center justify-center text-xs font-bold text-gray-300">
+        <div className="h-5 w-px hidden md:block bg-command-800" />
+        <div className="items-center gap-2 hidden md:flex">
+          <div
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold"
+            style={{ background: 'rgba(180,83,9,0.2)', border: '1px solid rgba(180,83,9,0.3)', color: '#d97706' }}
+          >
             {user.prenoms?.[0]}{user.nom?.[0]}
           </div>
-          <span className="text-gray-300">{user.prenoms} {user.nom}</span>
-          <span className="text-gray-600">|</span>
-          <span className="text-gray-500">CI-Abidjan</span>
+          <span className="font-body text-command-400">{user.prenoms} {user.nom}</span>
+          <span className="text-command-800">|</span>
+          <span className="font-body text-command-600">CI-Abidjan</span>
         </div>
-        <button onClick={onLogout} className="text-gray-500 hover:text-red-400 transition-colors text-xs font-medium ml-1">
+        <button
+          onClick={onLogout}
+          className="font-body text-xs font-medium ml-1 text-command-600 hover:text-red-400 transition-colors"
+        >
           <span className="hidden sm:inline">Deconnexion</span>
           <span className="sm:hidden">✕</span>
         </button>
@@ -54,26 +75,39 @@ function TopBar({ user, onLogout }: { user: any; onLogout: () => void }) {
 // ════════════════════════════════════════════
 function KpiBar({ stats }: { stats: typeof mockStats }) {
   const kpis = [
-    { value: stats.interventions_actives, suffix: '', label: 'Interventions actives', color: 'from-blue-600 to-blue-500', iconBg: 'bg-blue-50', icon: '🚒' },
-    { value: stats.alertes_en_attente, suffix: '', label: 'Alertes en attente', color: 'from-amber-500 to-orange-500', iconBg: 'bg-amber-50', icon: '🔔' },
-    { value: stats.equipes_disponibles, suffix: '', label: 'Equipes disponibles', color: 'from-gray-700 to-gray-600', iconBg: 'bg-gray-100', icon: '👥' },
-    { value: Math.round(stats.temps_moyen_minutes), suffix: ' min', label: "Temps moyen d'intervention", color: 'from-emerald-600 to-emerald-500', iconBg: 'bg-emerald-50', icon: '⏱' },
-    { value: stats.taux_reussite, suffix: '%', label: 'Taux de reussite', color: 'from-rose-600 to-red-500', iconBg: 'bg-rose-50', icon: '📊' },
+    { value: stats.interventions_actives, suffix: '', label: 'Interventions actives', gradStart: '#0891b2', gradEnd: '#38bdf8', iconBg: 'rgba(8,145,178,0.12)', iconBorder: 'rgba(8,145,178,0.25)', icon: '🚒' },
+    { value: stats.alertes_en_attente, suffix: '', label: 'Alertes en attente', gradStart: '#b45309', gradEnd: '#f59e0b', iconBg: 'rgba(180,83,9,0.12)', iconBorder: 'rgba(180,83,9,0.25)', icon: '🔔' },
+    { value: stats.equipes_disponibles, suffix: '', label: 'Equipes disponibles', gradStart: '#64748b', gradEnd: '#94a3b8', iconBg: 'rgba(100,116,139,0.12)', iconBorder: 'rgba(100,116,139,0.2)', icon: '👥' },
+    { value: Math.round(stats.temps_moyen_minutes), suffix: ' min', label: "Temps moyen d'intervention", gradStart: '#059669', gradEnd: '#34d399', iconBg: 'rgba(5,150,105,0.12)', iconBorder: 'rgba(5,150,105,0.25)', icon: '⏱' },
+    { value: stats.taux_reussite, suffix: '%', label: 'Taux de reussite', gradStart: '#b45309', gradEnd: '#0891b2', iconBg: 'rgba(180,83,9,0.1)', iconBorder: 'rgba(180,83,9,0.2)', icon: '📊' },
   ];
 
   return (
-    <div className="bg-white border-b border-gray-100 px-3 md:px-6 py-2 md:py-3">
+    <div
+      className="px-3 md:px-6 py-2 md:py-3 shrink-0 bg-command-900"
+      style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+    >
       <div className="grid grid-cols-3 md:grid-cols-5 gap-2 md:gap-4">
         {kpis.map((kpi, i) => (
           <div key={i} className="flex items-center gap-2 md:gap-3 py-1 group cursor-default">
-            <div className={`w-8 h-8 md:w-10 md:h-10 rounded-xl ${kpi.iconBg} flex items-center justify-center text-sm md:text-lg transition-transform group-hover:scale-110 shrink-0`}>
+            <div
+              className="w-8 h-8 md:w-10 md:h-10 rounded-xl flex items-center justify-center text-sm md:text-lg transition-transform group-hover:scale-110 shrink-0"
+              style={{ background: kpi.iconBg, border: `1px solid ${kpi.iconBorder}` }}
+            >
               {kpi.icon}
             </div>
             <div className="min-w-0">
-              <p className={`text-lg md:text-2xl font-extrabold bg-gradient-to-r ${kpi.color} bg-clip-text text-transparent count-up leading-none`}>
+              <p
+                className="text-lg md:text-2xl font-extrabold count-up leading-none bg-clip-text"
+                style={{
+                  backgroundImage: `linear-gradient(135deg, ${kpi.gradStart}, ${kpi.gradEnd})`,
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
                 {kpi.value}{kpi.suffix}
               </p>
-              <p className="text-[9px] md:text-[11px] text-gray-400 mt-0.5 font-medium truncate">{kpi.label}</p>
+              <p className="font-body text-[9px] md:text-[11px] mt-0.5 font-medium truncate text-command-700">{kpi.label}</p>
             </div>
           </div>
         ))}
@@ -87,8 +121,11 @@ function KpiBar({ stats }: { stats: typeof mockStats }) {
 // ════════════════════════════════════════════
 function MapLegend() {
   return (
-    <div className="absolute top-4 left-4 z-[1000] card px-4 py-3">
-      <p className="text-[11px] font-bold text-gray-700 mb-2 uppercase tracking-wider">Legende</p>
+    <div
+      className="absolute top-4 left-4 z-[1000] px-4 py-3 rounded-xl glass"
+      style={{ boxShadow: '0 8px 32px rgba(2,6,23,0.6)' }}
+    >
+      <p className="font-body text-[10px] font-bold uppercase tracking-widest mb-2.5 text-command-600">Legende</p>
       <div className="space-y-2">
         {[
           { color: '#ef4444', label: 'Non pris en charge', ring: true },
@@ -102,7 +139,7 @@ function MapLegend() {
               border: `2.5px solid ${item.color}`,
               boxShadow: `0 0 0 2px ${item.color}20`,
             }} />
-            <span className="text-[11px] text-gray-600 font-medium">{item.label}</span>
+            <span className="font-body text-[11px] font-medium text-command-400">{item.label}</span>
           </div>
         ))}
       </div>
@@ -140,9 +177,9 @@ function TeamTracker({ teams }: { teams: Team[] }) {
                 pathOptions={{ color: '#10b981', weight: 2.5, dashArray: '10 8', opacity: 0.6 }} />
             )}
             <CircleMarker center={[team.lat, team.lng]} radius={7}
-              pathOptions={{ color: '#1d4ed8', fillColor: '#3b82f6', fillOpacity: 1, weight: 2.5 }}>
+              pathOptions={{ color: '#0891b2', fillColor: '#38bdf8', fillOpacity: 1, weight: 2.5 }}>
               <Tooltip permanent direction="right" offset={[12, 0]}
-                className="!bg-white !border !border-gray-200 !shadow-lg !rounded-xl !px-2.5 !py-1 !text-[11px] !font-bold !text-gray-800">
+                className="!bg-slate-900 !border !border-cyan-500/30 !shadow-xl !rounded-xl !px-2.5 !py-1 !text-[11px] !font-bold !text-cyan-300">
                 🚒 {intv?.eta_minutes || '?'} min
               </Tooltip>
               <Popup><div className="text-xs"><p className="font-bold text-gray-900">{team.nom}</p><p className="text-gray-500">{team.unite} — {team.type_vehicule}</p></div></Popup>
@@ -161,9 +198,9 @@ function Stars({ score }: { score: number }) {
   return (
     <span className="inline-flex items-center gap-0.5">
       {Array.from({ length: 5 }, (_, i) => (
-        <span key={i} className={`text-xs ${i < Math.floor(score) ? 'text-amber-400' : 'text-gray-200'}`}>★</span>
+        <span key={i} className={`text-xs ${i < Math.floor(score) ? 'text-amber-400' : 'text-command-700'}`}>★</span>
       ))}
-      <span className="text-[11px] text-gray-400 font-semibold ml-1">{score.toFixed(1)}</span>
+      <span className="font-body text-[11px] font-semibold ml-1 text-command-600">{score.toFixed(1)}</span>
     </span>
   );
 }
@@ -183,16 +220,31 @@ function AlertItem({ alert, onValidate, onReject, onMerge, onCall, selected, onC
   const time = new Date(alert.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
   return (
-    <div onClick={onClick} className={`py-4 border-b border-gray-100 last:border-b-0 fade-in cursor-pointer transition-all rounded-xl px-2 ${selected ? 'bg-amber-50 ring-2 ring-amber-400/30 shadow-sm' : 'hover:bg-amber-50/30'} ${alert.similar_alert_nearby && !selected ? 'alert-pulse border-l-4 border-l-amber-400 pl-3' : ''}`}>
+    <div
+      onClick={onClick}
+      className={`py-4 border-b last:border-b-0 fade-in cursor-pointer transition-all rounded-xl px-3 mb-1 ${alert.similar_alert_nearby && !selected ? 'alert-pulse' : ''}`}
+      style={selected ? {
+        background: 'rgba(180,83,9,0.1)',
+        borderColor: 'rgba(180,83,9,0.15)',
+        boxShadow: '0 0 0 1.5px rgba(180,83,9,0.3)',
+      } : {
+        borderColor: 'rgba(148,163,184,0.06)',
+        borderLeftWidth: alert.similar_alert_nearby && !selected ? '3px' : undefined,
+        borderLeftColor: alert.similar_alert_nearby && !selected ? '#f59e0b' : undefined,
+      }}
+    >
       {/* Header */}
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center text-base">
+          <div
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-base"
+            style={{ background: 'rgba(180,83,9,0.15)', border: '1px solid rgba(180,83,9,0.3)' }}
+          >
             {icons[alert.type_incident] || '⚠️'}
           </div>
           <div>
-            <p className="font-bold text-gray-900 text-[13px] leading-tight">{alert.type_incident}</p>
-            <p className="text-[10px] text-gray-400 font-mono">{alert.code}</p>
+            <p className="font-body font-bold text-[13px] leading-tight text-command-200">{alert.type_incident}</p>
+            <p className="font-mono text-[10px] text-command-700">{alert.code}</p>
           </div>
         </div>
         <span className="badge-pending">{alert.statut === 'PENDING' ? 'En attente' : alert.statut}</span>
@@ -200,31 +252,40 @@ function AlertItem({ alert, onValidate, onReject, onMerge, onCall, selected, onC
 
       {/* Address */}
       <div className="flex items-center gap-1.5 mb-2">
-        <span className="text-pink-400 text-xs">📍</span>
-        <span className="text-[12px] text-gray-500">{alert.adresse}</span>
+        <span className="text-xs text-command-400">📍</span>
+        <span className="font-body text-[12px] text-command-500">{alert.adresse}</span>
       </div>
 
       {/* Citizen */}
-      <div className="bg-gray-50 rounded-xl px-3 py-2.5 mb-2.5">
+      <div
+        className="rounded-xl px-3 py-2.5 mb-2.5"
+        style={{ background: 'rgba(2,6,23,0.5)', border: '1px solid rgba(148,163,184,0.06)' }}
+      >
         <div className="flex items-center justify-between">
-          <p className="text-[13px] text-gray-900">
-            <span className="font-bold">{alert.citoyen_nom} {alert.citoyen_prenoms}</span>
-            <span className="text-gray-300 mx-1.5">—</span>
-            <span className="text-blue-600 font-medium">{alert.citoyen_telephone}</span>
+          <p className="font-body text-[13px] text-command-400">
+            <span className="font-bold text-command-300">{alert.citoyen_nom} {alert.citoyen_prenoms}</span>
+            <span className="mx-1.5 text-command-800">—</span>
+            <span className="font-medium text-accent-400">{alert.citoyen_telephone}</span>
           </p>
         </div>
         <div className="flex items-center gap-2 mt-1">
           <Stars score={alert.citoyen_reputation} />
-          <span className="text-gray-300">—</span>
-          <span className="text-[11px] text-gray-400">{time}</span>
+          <span className="text-command-800">—</span>
+          <span className="font-body text-[11px] text-command-700">{time}</span>
         </div>
       </div>
 
       {/* Duplicate warning */}
       {alert.similar_alert_nearby && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl px-3.5 py-2.5 mb-3 flex items-start gap-2">
-          <span className="text-amber-500 text-sm mt-0.5">⚠️</span>
-          <p className="text-[12px] text-amber-700 leading-relaxed">
+        <div
+          className="rounded-xl px-3.5 py-2.5 mb-3 flex items-start gap-2"
+          style={{
+            background: 'rgba(180,83,9,0.08)',
+            border: '1px solid rgba(180,83,9,0.3)',
+          }}
+        >
+          <span className="text-sm mt-0.5">⚠️</span>
+          <p className="font-body text-[12px] leading-relaxed text-sahel-600">
             Alerte similaire detectee a <strong>{alert.similar_alert_distance}m</strong> — Fusionner avec <strong>{alert.similar_intervention_id}</strong> ?
           </p>
         </div>
@@ -272,35 +333,55 @@ function MapController({ target }: { target: { lat: number; lng: number } | null
 //  INTERVENTION ITEM
 // ════════════════════════════════════════════
 function InterventionItem({ intv, selected, onClick }: { intv: Intervention; selected?: boolean; onClick?: () => void }) {
-  const conf: Record<string, { bg: string; dot: string; label: string }> = {
-    NOUVEAU: { bg: 'bg-red-50 text-red-600 border-red-200', dot: 'bg-red-500', label: 'Nouveau' },
-    EN_ROUTE: { bg: 'bg-purple-50 text-purple-600 border-purple-200', dot: 'bg-purple-500', label: 'En route' },
-    SUR_PLACE: { bg: 'bg-orange-50 text-orange-600 border-orange-200', dot: 'bg-orange-500', label: 'Sur place' },
-    TERMINE: { bg: 'bg-emerald-50 text-emerald-600 border-emerald-200', dot: 'bg-emerald-500', label: 'Terminee' },
+  const conf: Record<string, { borderColor: string; dotColor: string; labelColor: string; labelBg: string; label: string }> = {
+    NOUVEAU: { borderColor: '#ef4444', dotColor: '#ef4444', labelColor: '#fca5a5', labelBg: 'rgba(239,68,68,0.12)', label: 'Nouveau' },
+    EN_ROUTE: { borderColor: '#a855f7', dotColor: '#a855f7', labelColor: '#d8b4fe', labelBg: 'rgba(168,85,247,0.12)', label: 'En route' },
+    SUR_PLACE: { borderColor: '#f59e0b', dotColor: '#f59e0b', labelColor: '#fcd34d', labelBg: 'rgba(245,158,11,0.12)', label: 'Sur place' },
+    TERMINE: { borderColor: '#10b981', dotColor: '#10b981', labelColor: '#6ee7b7', labelBg: 'rgba(16,185,129,0.12)', label: 'Terminee' },
   };
   const icons: Record<string, string> = { 'Incendie': '🔥', 'Accident de route': '🚗', 'Fuite de gaz': '💨', 'Inondation': '🌊', 'Secours à personne': '🏥' };
   const st = conf[intv.statut] || conf.NOUVEAU;
 
   return (
-    <div onClick={onClick} className={`py-3.5 border-b border-gray-100 last:border-b-0 hover:bg-blue-50/50 transition-all rounded-xl px-2 cursor-pointer fade-in ${selected ? 'bg-blue-50 ring-2 ring-blue-400/30 shadow-sm' : ''}`}>
+    <div
+      onClick={onClick}
+      className="py-3.5 border-b last:border-b-0 transition-all rounded-xl px-3 cursor-pointer fade-in mb-1"
+      style={selected ? {
+        background: 'rgba(8,145,178,0.1)',
+        borderColor: 'rgba(8,145,178,0.15)',
+        boxShadow: '0 0 0 1.5px rgba(8,145,178,0.3)',
+        borderLeft: `3px solid ${st.borderColor}`,
+      } : {
+        borderColor: 'rgba(148,163,184,0.06)',
+        borderLeft: `3px solid ${st.borderColor}`,
+      }}
+    >
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center text-base shrink-0">
+        <div
+          className="w-9 h-9 rounded-xl flex items-center justify-center text-base shrink-0"
+          style={{ background: 'rgba(2,6,23,0.7)', border: `1px solid ${st.borderColor}30` }}
+        >
           {icons[intv.type_incident] || '🚒'}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
-            <span className="font-bold text-[13px] text-gray-900">{intv.type_incident}</span>
-            <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${st.bg}`}>{st.label}</span>
+            <span className="font-body font-bold text-[13px] text-command-200">{intv.type_incident}</span>
+            <span
+              className="px-2 py-0.5 rounded-md text-[10px] font-bold font-body"
+              style={{ background: st.labelBg, color: st.labelColor, border: `1px solid ${st.borderColor}30` }}
+            >
+              {st.label}
+            </span>
           </div>
-          <div className="flex items-center gap-2 text-[11px] text-gray-400">
+          <div className="flex items-center gap-2 text-[11px] text-command-700">
             <span className="font-mono">{intv.code}</span>
-            {intv.equipe_nom && <><span>—</span><span className="text-gray-600">🚒 {intv.equipe_nom}</span></>}
+            {intv.equipe_nom && <><span>—</span><span className="font-body text-command-600">🚒 {intv.equipe_nom}</span></>}
           </div>
         </div>
         {intv.eta_minutes !== null && intv.eta_minutes > 0 && (
           <div className="text-right shrink-0">
-            <p className="text-sm font-extrabold text-emerald-600">{intv.eta_minutes} min</p>
-            <p className="text-[10px] text-gray-400">{intv.distance_km} km</p>
+            <p className="text-sm font-extrabold text-emerald-400">{intv.eta_minutes} min</p>
+            <p className="font-body text-[10px] text-command-700">{intv.distance_km} km</p>
           </div>
         )}
       </div>
@@ -312,21 +393,36 @@ function InterventionItem({ intv, selected, onClick }: { intv: Intervention; sel
 //  TEAM ITEM
 // ════════════════════════════════════════════
 function TeamItem({ team, selected, onClick }: { team: Team; selected?: boolean; onClick?: () => void }) {
-  const dots: Record<string, string> = { DISPONIBLE: 'bg-emerald-500', EN_MISSION: 'bg-red-500', RETOUR_CASERNE: 'bg-blue-500' };
+  const dots: Record<string, string> = { DISPONIBLE: '#22c55e', EN_MISSION: '#ef4444', RETOUR_CASERNE: '#38bdf8' };
   const labels: Record<string, string> = { DISPONIBLE: 'Disponible', EN_MISSION: 'En mission', RETOUR_CASERNE: 'Retour' };
-  const dotColors: Record<string, string> = { DISPONIBLE: 'shadow-emerald-500/30', EN_MISSION: 'shadow-red-500/30', RETOUR_CASERNE: 'shadow-blue-500/30' };
+  const labelColors: Record<string, string> = { DISPONIBLE: '#4ade80', EN_MISSION: '#fca5a5', RETOUR_CASERNE: '#67e8f9' };
 
   return (
-    <div onClick={onClick} className={`py-3.5 border-b border-gray-100 last:border-b-0 hover:bg-emerald-50/30 transition-all rounded-xl px-2 cursor-pointer fade-in ${selected ? 'bg-emerald-50 ring-2 ring-emerald-400/30 shadow-sm' : ''}`}>
+    <div
+      onClick={onClick}
+      className="py-3.5 border-b last:border-b-0 transition-all rounded-xl px-3 cursor-pointer fade-in mb-1"
+      style={selected ? {
+        background: 'rgba(8,145,178,0.1)',
+        borderColor: 'rgba(8,145,178,0.15)',
+        boxShadow: '0 0 0 1.5px rgba(8,145,178,0.3)',
+      } : {
+        borderColor: 'rgba(148,163,184,0.06)',
+      }}
+    >
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center text-base shrink-0">🚒</div>
+        <div
+          className="w-9 h-9 rounded-xl flex items-center justify-center text-base shrink-0"
+          style={{ background: 'rgba(180,83,9,0.12)', border: '1px solid rgba(180,83,9,0.25)' }}
+        >
+          🚒
+        </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
-            <span className="font-bold text-[13px] text-gray-900">{team.nom}</span>
-            <span className={`w-2 h-2 rounded-full ${dots[team.statut]} shadow-md ${dotColors[team.statut]}`} />
-            <span className="text-[10px] text-gray-400 font-medium">{labels[team.statut]}</span>
+            <span className="font-body font-bold text-[13px] text-command-200">{team.nom}</span>
+            <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: dots[team.statut], boxShadow: `0 0 6px ${dots[team.statut]}` }} />
+            <span className="font-body text-[10px] font-medium" style={{ color: labelColors[team.statut] }}>{labels[team.statut]}</span>
           </div>
-          <p className="text-[11px] text-gray-400">{team.unite} — {team.type_vehicule} — {team.membres.length} pers.</p>
+          <p className="font-body text-[11px] text-command-700">{team.unite} — {team.type_vehicule} — {team.membres.length} pers.</p>
         </div>
         <Stars score={team.note_moyenne} />
       </div>
@@ -391,32 +487,65 @@ function RapportsSection({ rapports }: { rapports: any[] }) {
   const avgDuree = filtered.length > 0 ? Math.round(filtered.reduce((s, r) => s + (r.duree_minutes || 0), 0) / filtered.length) : 0;
 
   return (
-    <div className="mx-3 mb-3 mt-1">
-      <div className="card p-5">
+    <div className="mx-3 mb-4 mt-1">
+      <div className="card p-5" style={{ boxShadow: '0 4px 24px rgba(2,6,23,0.4)' }}>
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-3">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-5 gap-3">
           <div>
-            <h3 className="text-[15px] font-bold text-gray-900">Rapports d'intervention</h3>
-            <p className="text-xs text-gray-500">{filtered.length} rapport(s) — {range.label}</p>
+            <h3 className="font-display text-[15px] font-bold text-command-200">Rapports d'intervention</h3>
+            <p className="font-body text-xs mt-0.5 text-command-600">{filtered.length} rapport(s) — {range.label}</p>
           </div>
           {filtered.length > 0 && (
             <div className="flex gap-2 shrink-0">
-              <button onClick={() => exportPDF(filtered, range.label)} className="px-3 py-1.5 rounded-lg bg-red-50 text-red-600 border border-red-200 text-xs font-bold hover:bg-red-100 transition-colors">PDF</button>
-              <button onClick={() => exportExcel(filtered, range.label)} className="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-200 text-xs font-bold hover:bg-emerald-100 transition-colors">Excel</button>
-              <button onClick={() => exportWord(filtered, range.label)} className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 border border-blue-200 text-xs font-bold hover:bg-blue-100 transition-colors">Word</button>
+              <button
+                onClick={() => exportPDF(filtered, range.label)}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold font-body transition-colors"
+                style={{ background: 'rgba(239,68,68,0.1)', color: '#fca5a5', border: '1px solid rgba(239,68,68,0.25)' }}
+                onMouseOver={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.18)')}
+                onMouseOut={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.1)')}
+              >
+                PDF
+              </button>
+              <button
+                onClick={() => exportExcel(filtered, range.label)}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold font-body transition-colors"
+                style={{ background: 'rgba(16,185,129,0.1)', color: '#6ee7b7', border: '1px solid rgba(16,185,129,0.25)' }}
+                onMouseOver={e => (e.currentTarget.style.background = 'rgba(16,185,129,0.18)')}
+                onMouseOut={e => (e.currentTarget.style.background = 'rgba(16,185,129,0.1)')}
+              >
+                Excel
+              </button>
+              <button
+                onClick={() => exportWord(filtered, range.label)}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold font-body transition-colors"
+                style={{ background: 'rgba(8,145,178,0.1)', color: '#67e8f9', border: '1px solid rgba(8,145,178,0.25)' }}
+                onMouseOver={e => (e.currentTarget.style.background = 'rgba(8,145,178,0.18)')}
+                onMouseOut={e => (e.currentTarget.style.background = 'rgba(8,145,178,0.1)')}
+              >
+                Word
+              </button>
             </div>
           )}
         </div>
 
         {/* Period filters */}
-        <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
+        <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
           {periodFilters.map(f => (
-            <button key={f.key} onClick={() => setPeriod(f.key)}
-              className={`px-3 py-2 rounded-xl text-xs font-bold border-2 whitespace-nowrap transition-all flex items-center gap-1.5 ${
-                period === f.key
-                  ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm'
-                  : 'border-gray-200 text-gray-500 bg-white hover:bg-gray-50'
-              }`}>
+            <button
+              key={f.key}
+              onClick={() => setPeriod(f.key)}
+              className="px-3 py-2 rounded-xl text-xs font-bold font-body whitespace-nowrap transition-all flex items-center gap-1.5"
+              style={period === f.key ? {
+                background: 'rgba(180,83,9,0.15)',
+                border: '1.5px solid rgba(180,83,9,0.5)',
+                color: '#f59e0b',
+                boxShadow: '0 0 12px rgba(180,83,9,0.15)',
+              } : {
+                background: 'rgba(2,6,23,0.5)',
+                border: '1.5px solid rgba(148,163,184,0.07)',
+                color: '#475569',
+              }}
+            >
               <span>{f.icon}</span> {f.label}
             </button>
           ))}
@@ -424,72 +553,81 @@ function RapportsSection({ rapports }: { rapports: any[] }) {
 
         {/* Stats summary */}
         {filtered.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-            <div className="bg-blue-50 rounded-xl p-3 text-center">
-              <p className="text-lg font-extrabold text-blue-600">{filtered.length}</p>
-              <p className="text-[10px] text-blue-500 font-medium">Interventions</p>
-            </div>
-            <div className="bg-amber-50 rounded-xl p-3 text-center">
-              <p className="text-lg font-extrabold text-amber-600">{totalPersonnel}</p>
-              <p className="text-[10px] text-amber-500 font-medium">Personnel mobilise</p>
-            </div>
-            <div className="bg-red-50 rounded-xl p-3 text-center">
-              <p className="text-lg font-extrabold text-red-600">{totalVictimes}</p>
-              <p className="text-[10px] text-red-500 font-medium">Victimes</p>
-            </div>
-            <div className="bg-emerald-50 rounded-xl p-3 text-center">
-              <p className="text-lg font-extrabold text-emerald-600">{avgDuree} min</p>
-              <p className="text-[10px] text-emerald-500 font-medium">Duree moyenne</p>
-            </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+            {[
+              { value: filtered.length, label: 'Interventions', color: '#38bdf8', bg: 'rgba(8,145,178,0.1)', border: 'rgba(8,145,178,0.2)' },
+              { value: totalPersonnel, label: 'Personnel mobilise', color: '#fbbf24', bg: 'rgba(180,83,9,0.1)', border: 'rgba(180,83,9,0.2)' },
+              { value: totalVictimes, label: 'Victimes', color: '#fca5a5', bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.2)' },
+              { value: `${avgDuree} min`, label: 'Duree moyenne', color: '#6ee7b7', bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.2)' },
+            ].map((s, i) => (
+              <div key={i} className="rounded-xl p-3 text-center" style={{ background: s.bg, border: `1px solid ${s.border}` }}>
+                <p className="text-lg font-extrabold font-display" style={{ color: s.color }}>{s.value}</p>
+                <p className="font-body text-[10px] font-medium mt-0.5" style={{ color: s.color, opacity: 0.7 }}>{s.label}</p>
+              </div>
+            ))}
           </div>
         )}
 
         {/* Table */}
         {filtered.length === 0 ? (
-          <div className="text-center py-8 text-gray-300">
-            <p className="text-3xl mb-2">📋</p>
-            <p className="text-sm font-medium">Aucun rapport {period !== 'all' ? 'pour cette periode' : 'pour le moment'}</p>
-            <p className="text-xs text-gray-400 mt-1">Les bilans soumis par les equipes (GERMS Pro) apparaitront ici</p>
+          <div className="text-center py-10">
+            <p className="text-3xl mb-3">📋</p>
+            <p className="font-body text-sm font-medium text-command-700">Aucun rapport {period !== 'all' ? 'pour cette periode' : 'pour le moment'}</p>
+            <p className="font-body text-xs mt-1 text-command-800">Les bilans soumis par les equipes (GERMS Pro) apparaitront ici</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-xl" style={{ border: '1px solid rgba(148,163,184,0.07)' }}>
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-gray-50 text-gray-500 text-xs uppercase">
-                  <th className="text-left p-3 rounded-l-xl font-bold">Code</th>
-                  <th className="text-left p-3 font-bold">Type</th>
-                  <th className="text-left p-3 font-bold">Adresse</th>
-                  <th className="text-left p-3 font-bold">Equipe</th>
-                  <th className="text-center p-3 font-bold">Vehic.</th>
-                  <th className="text-center p-3 font-bold">Pers.</th>
-                  <th className="text-center p-3 font-bold">Victimes</th>
-                  <th className="text-left p-3 font-bold">Actions</th>
-                  <th className="text-center p-3 font-bold">Duree</th>
-                  <th className="text-left p-3 rounded-r-xl font-bold">Date</th>
+                <tr className="bg-command-800">
+                  {['Code', 'Type', 'Adresse', 'Equipe', 'Vehic.', 'Pers.', 'Victimes', 'Actions', 'Duree', 'Date'].map((h, i, arr) => (
+                    <th
+                      key={h}
+                      className={`text-left p-3 font-body font-bold text-[10px] uppercase tracking-wider text-command-500 ${i === 0 ? 'rounded-tl-xl' : ''} ${i === arr.length - 1 ? 'rounded-tr-xl text-right' : ''} ${['Vehic.', 'Pers.', 'Victimes', 'Duree'].includes(h) ? 'text-center' : ''}`}
+                      style={{ borderBottom: '1px solid rgba(148,163,184,0.07)' }}
+                    >
+                      {h}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((r, i) => (
-                  <tr key={i} className="border-t border-gray-100 hover:bg-gray-50/50 transition-colors">
-                    <td className="p-3 font-mono text-xs text-gray-600">{r.code}</td>
-                    <td className="p-3 font-semibold text-gray-900">{r.type_incident}</td>
-                    <td className="p-3 text-gray-600 text-xs max-w-[150px] truncate">{r.adresse}</td>
-                    <td className="p-3 text-gray-700 text-xs">{r.equipe}<br/><span className="text-gray-400">{r.unite}</span></td>
-                    <td className="p-3 text-center font-bold">{r.vehicules}</td>
-                    <td className="p-3 text-center font-bold">{r.personnel}</td>
-                    <td className="p-3 text-center">
-                      <span className={`font-bold ${r.victimes_total > 0 ? 'text-red-600' : 'text-gray-400'}`}>{r.victimes_total}</span>
-                      {r.victimes_deces > 0 && <span className="text-[10px] text-red-500 block">{r.victimes_deces} deces</span>}
+                  <tr
+                    key={i}
+                    className="transition-colors"
+                    style={{ borderTop: '1px solid rgba(148,163,184,0.05)' }}
+                    onMouseOver={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.02)')}
+                    onMouseOut={e => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <td className="p-3 font-mono text-xs text-command-600">{r.code}</td>
+                    <td className="p-3 font-body font-semibold text-command-300">{r.type_incident}</td>
+                    <td className="p-3 font-body text-xs max-w-[150px] truncate text-command-600">{r.adresse}</td>
+                    <td className="p-3 font-body text-xs text-command-500">
+                      {r.equipe}<br />
+                      <span className="text-command-700">{r.unite}</span>
                     </td>
-                    <td className="p-3 text-xs text-gray-600 max-w-[200px]">
+                    <td className="p-3 text-center font-bold font-body text-command-400">{r.vehicules}</td>
+                    <td className="p-3 text-center font-bold font-body text-command-400">{r.personnel}</td>
+                    <td className="p-3 text-center">
+                      <span className="font-bold font-body" style={{ color: r.victimes_total > 0 ? '#fca5a5' : '#334155' }}>{r.victimes_total}</span>
+                      {r.victimes_deces > 0 && <span className="font-body text-[10px] block text-red-500">{r.victimes_deces} deces</span>}
+                    </td>
+                    <td className="p-3 text-xs max-w-[200px]">
                       <div className="flex flex-wrap gap-1">
                         {r.actions?.map((a: string, j: number) => (
-                          <span key={j} className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 text-[10px] font-medium">{a}</span>
+                          <span
+                            key={j}
+                            className="px-1.5 py-0.5 rounded font-body text-[10px] font-medium"
+                            style={{ background: 'rgba(8,145,178,0.12)', color: '#67e8f9', border: '1px solid rgba(8,145,178,0.2)' }}
+                          >
+                            {a}
+                          </span>
                         ))}
                       </div>
                     </td>
-                    <td className="p-3 text-center font-bold text-gray-900">{r.duree_minutes} min</td>
-                    <td className="p-3 text-xs text-gray-500">{new Date(r.date).toLocaleString('fr-FR')}</td>
+                    <td className="p-3 text-center font-bold font-body text-command-300">{r.duree_minutes} min</td>
+                    <td className="p-3 text-right font-body text-xs text-command-700">{new Date(r.date).toLocaleString('fr-FR')}</td>
                   </tr>
                 ))}
               </tbody>
@@ -746,130 +884,189 @@ export default function CommandCenter({ user, onLogout }: Props) {
   const handleCall = useCallback((tel: string) => window.alert(`Appel vers ${tel} (simulation)`), []);
 
   const tabs = [
-    { key: 'alerts' as const, label: 'Alertes', count: pendingAlerts.length, color: 'bg-amber-500' },
-    { key: 'interventions' as const, label: 'Interventions', count: interventions.length, color: 'bg-blue-500' },
-    { key: 'teams' as const, label: 'Equipes', count: teams.length, color: 'bg-gray-500' },
+    { key: 'alerts' as const, label: 'Alertes', count: pendingAlerts.length, activeColor: '#f59e0b', activeBg: 'rgba(180,83,9,0.15)', indicatorColor: 'sahel-500' },
+    { key: 'interventions' as const, label: 'Interventions', count: interventions.length, activeColor: '#22d3ee', activeBg: 'rgba(8,145,178,0.15)', indicatorColor: 'accent-500' },
+    { key: 'teams' as const, label: 'Equipes', count: teams.length, activeColor: '#94a3b8', activeBg: 'rgba(100,116,139,0.15)', indicatorColor: 'command-400' },
   ];
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ background: 'linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 30%, #fefce8 60%, #fdf2f8 100%)' }}>
+    <div className="h-screen flex flex-col overflow-hidden bg-command-950">
       <TopBar user={user} onLogout={onLogout} />
       <KpiBar stats={stats} />
 
       {/* Main area — scrollable */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto bg-command-950">
         {/* Map + Side Panel */}
         <div className="flex flex-col lg:flex-row" style={{ minHeight: '400px' }}>
-        {/* ── MAP ── */}
-        <div className="relative m-2 md:m-3 lg:mr-1.5 rounded-2xl overflow-hidden shadow-lg shadow-gray-900/5 border border-gray-200/50 h-[40vh] lg:h-auto lg:flex-1">
-          <MapLegend />
-          <MapContainer center={[5.3400, -4.0100]} zoom={13} style={{ height: '100%', width: '100%' }} zoomControl={false}>
-            <MapController target={mapTarget} />
-            <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" attribution="CARTO" />
+          {/* ── MAP ── */}
+          <div
+            className="relative m-2 md:m-3 lg:mr-1.5 rounded-2xl overflow-hidden h-[40vh] lg:h-auto lg:flex-1"
+            style={{
+              border: '1px solid rgba(148,163,184,0.07)',
+              boxShadow: '0 4px 32px rgba(2,6,23,0.6)',
+            }}
+          >
+            <MapLegend />
+            <MapContainer center={[5.3400, -4.0100]} zoom={13} style={{ height: '100%', width: '100%' }} zoomControl={false}>
+              <MapController target={mapTarget} />
+              <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" attribution="CARTO" />
 
-            {interventions.map(intv => {
-              const c: Record<string, { stroke: string; fill: string }> = {
-                NOUVEAU: { stroke: '#ef4444', fill: '#ef444450' },
-                EN_ROUTE: { stroke: '#22c55e', fill: '#22c55e40' },
-                SUR_PLACE: { stroke: '#22c55e', fill: '#22c55e60' },
-                TERMINE: { stroke: '#3b82f6', fill: '#3b82f640' },
-              };
-              const col = c[intv.statut] || c.NOUVEAU;
-              const isSelected = selectedIntvId === intv.id;
-              return (
-                <React.Fragment key={`i-${intv.id}`}>
-                  <CircleMarker center={[intv.lat, intv.lng]} radius={isSelected ? 24 : 16}
-                    pathOptions={{ color: col.stroke, fillColor: col.fill, fillOpacity: isSelected ? 0.8 : 0.5, weight: isSelected ? 5 : 3 }}>
-                    <Tooltip permanent direction="top" offset={[0, -20]}
-                      className="!bg-white !border !border-gray-200 !shadow-lg !rounded-xl !px-2.5 !py-1.5 !text-[11px]">
+              {interventions.map(intv => {
+                const c: Record<string, { stroke: string; fill: string }> = {
+                  NOUVEAU: { stroke: '#ef4444', fill: '#ef444450' },
+                  EN_ROUTE: { stroke: '#22c55e', fill: '#22c55e40' },
+                  SUR_PLACE: { stroke: '#22c55e', fill: '#22c55e60' },
+                  TERMINE: { stroke: '#3b82f6', fill: '#3b82f640' },
+                };
+                const col = c[intv.statut] || c.NOUVEAU;
+                const isSelected = selectedIntvId === intv.id;
+                return (
+                  <React.Fragment key={`i-${intv.id}`}>
+                    <CircleMarker center={[intv.lat, intv.lng]} radius={isSelected ? 24 : 16}
+                      pathOptions={{ color: col.stroke, fillColor: col.fill, fillOpacity: isSelected ? 0.8 : 0.5, weight: isSelected ? 5 : 3 }}>
+                      <Tooltip permanent direction="top" offset={[0, -20]}
+                        className="!bg-slate-900 !border !border-slate-700 !shadow-xl !rounded-xl !px-2.5 !py-1.5 !text-[11px]">
+                        <div className="text-center leading-tight">
+                          <p className="font-bold" style={{ color: col.stroke }}>{intv.type_incident.split(' ')[0]}</p>
+                          <p className="font-mono text-[9px]" style={{ color: '#475569' }}>{intv.code.split('-').pop()}</p>
+                        </div>
+                      </Tooltip>
+                      <Popup>
+                        <div className="text-xs min-w-[180px]">
+                          <p className="font-bold text-gray-900 text-sm mb-1">{intv.type_incident}</p>
+                          <p className="text-gray-500 mb-0.5">📍 {intv.adresse}</p>
+                          <p className="text-gray-400 font-mono text-[10px]">{intv.code}</p>
+                          {intv.equipe_nom && <p className="text-blue-600 font-semibold mt-1.5">🚒 {intv.equipe_nom}</p>}
+                          {intv.eta_minutes !== null && intv.eta_minutes > 0 && <p className="text-emerald-600 font-bold mt-0.5">ETA: {intv.eta_minutes} min</p>}
+                        </div>
+                      </Popup>
+                    </CircleMarker>
+                    {intv.statut !== 'TERMINE' && (
+                      <Circle center={[intv.lat, intv.lng]} radius={500}
+                        pathOptions={{ color: '#f59e0b', fillColor: '#f59e0b', fillOpacity: 0.02, weight: 1.5, dashArray: '8 6' }} />
+                    )}
+                  </React.Fragment>
+                );
+              })}
+
+              {pendingAlerts.map(alert => {
+                const isSelAlert = selectedAlertId === alert.id;
+                return (
+                  <CircleMarker key={`a-${alert.id}`} center={[alert.lat, alert.lng]} radius={isSelAlert ? 22 : 14}
+                    pathOptions={{ color: '#f59e0b', fillColor: '#fbbf2430', fillOpacity: isSelAlert ? 0.7 : 0.4, weight: isSelAlert ? 5 : 3 }}>
+                    <Tooltip permanent direction="top" offset={[0, -18]}
+                      className="!bg-slate-900 !border !border-amber-500/40 !shadow-xl !rounded-xl !px-2.5 !py-1.5 !text-[11px]">
                       <div className="text-center leading-tight">
-                        <p className="font-bold" style={{ color: col.stroke }}>{intv.type_incident.split(' ')[0]}</p>
-                        <p className="text-gray-400 font-mono text-[9px]">{intv.code.split('-').pop()}</p>
+                        <p className="font-bold" style={{ color: '#f59e0b' }}>Alerte</p>
+                        <p className="font-mono text-[9px]" style={{ color: '#475569' }}>{alert.code.split('-').pop()}</p>
                       </div>
                     </Tooltip>
                     <Popup>
                       <div className="text-xs min-w-[180px]">
-                        <p className="font-bold text-gray-900 text-sm mb-1">{intv.type_incident}</p>
-                        <p className="text-gray-500 mb-0.5">📍 {intv.adresse}</p>
-                        <p className="text-gray-400 font-mono text-[10px]">{intv.code}</p>
-                        {intv.equipe_nom && <p className="text-blue-600 font-semibold mt-1.5">🚒 {intv.equipe_nom}</p>}
-                        {intv.eta_minutes !== null && intv.eta_minutes > 0 && <p className="text-emerald-600 font-bold mt-0.5">ETA: {intv.eta_minutes} min</p>}
+                        <p className="font-bold text-gray-900 text-sm mb-1">🔔 {alert.type_incident}</p>
+                        <p className="text-gray-500">📍 {alert.adresse}</p>
+                        <p className="text-gray-500 mt-0.5">👤 {alert.citoyen_prenoms} {alert.citoyen_nom}</p>
                       </div>
                     </Popup>
                   </CircleMarker>
-                  {intv.statut !== 'TERMINE' && (
-                    <Circle center={[intv.lat, intv.lng]} radius={500}
-                      pathOptions={{ color: '#f59e0b', fillColor: '#f59e0b', fillOpacity: 0.02, weight: 1.5, dashArray: '8 6' }} />
-                  )}
-                </React.Fragment>
-              );
-            })}
+                );
+              })}
 
-            {pendingAlerts.map(alert => {
-              const isSelAlert = selectedAlertId === alert.id;
-              return (
-              <CircleMarker key={`a-${alert.id}`} center={[alert.lat, alert.lng]} radius={isSelAlert ? 22 : 14}
-                pathOptions={{ color: '#f59e0b', fillColor: '#fbbf2430', fillOpacity: isSelAlert ? 0.7 : 0.4, weight: isSelAlert ? 5 : 3 }}>
-                <Tooltip permanent direction="top" offset={[0, -18]}
-                  className="!bg-white !border !border-amber-200 !shadow-lg !rounded-xl !px-2.5 !py-1.5 !text-[11px]">
-                  <div className="text-center leading-tight">
-                    <p className="font-bold text-amber-600">Alerte</p>
-                    <p className="text-gray-400 font-mono text-[9px]">{alert.code.split('-').pop()}</p>
-                  </div>
-                </Tooltip>
-                <Popup>
-                  <div className="text-xs min-w-[180px]">
-                    <p className="font-bold text-gray-900 text-sm mb-1">🔔 {alert.type_incident}</p>
-                    <p className="text-gray-500">📍 {alert.adresse}</p>
-                    <p className="text-gray-500 mt-0.5">👤 {alert.citoyen_prenoms} {alert.citoyen_nom}</p>
-                  </div>
-                </Popup>
-              </CircleMarker>
-              );
-            })}
-
-            <TeamTracker teams={teams} />
-          </MapContainer>
-        </div>
-
-        {/* ── SIDE PANEL ── */}
-        <div className="w-full lg:w-[440px] bg-white m-2 md:m-3 lg:ml-1.5 rounded-2xl shadow-lg shadow-gray-900/5 border border-gray-200/50 flex flex-col shrink-0 overflow-hidden lg:max-h-[60vh]">
-          {/* Tabs */}
-          <div className="flex border-b border-gray-100 px-1 pt-1">
-            {tabs.map(t => (
-              <button key={t.key} onClick={() => setTab(t.key)}
-                className={`flex-1 py-3 text-[13px] font-semibold border-b-[3px] transition-all rounded-t-lg mx-0.5 ${
-                  tab === t.key
-                    ? 'text-gray-900 border-gray-900 bg-gray-50'
-                    : 'text-gray-400 border-transparent hover:text-gray-600 hover:bg-gray-50/50'
-                }`}>
-                {t.label}
-                <span className={`ml-1.5 px-1.5 py-0.5 rounded-md text-[10px] font-bold ${
-                  tab === t.key ? `${t.color} text-white` : 'bg-gray-100 text-gray-400'
-                }`}>
-                  {t.count}
-                </span>
-              </button>
-            ))}
+              <TeamTracker teams={teams} />
+            </MapContainer>
           </div>
 
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto px-4">
-            {tab === 'alerts' && (
-              pendingAlerts.length === 0
-                ? <div className="flex flex-col items-center justify-center h-40 text-gray-300"><p className="text-3xl mb-2">✅</p><p className="text-sm font-medium">Aucune alerte en attente</p></div>
-                : pendingAlerts.map(a => <AlertItem key={a.id} alert={a} onValidate={handleValidate} onReject={handleReject} onMerge={handleMerge} onCall={handleCall} selected={selectedAlertId === a.id} onClick={() => handleAlertClick(a)} />)
-            )}
-            {tab === 'interventions' && (interventions.length === 0
-              ? <div className="flex flex-col items-center justify-center h-40 text-gray-300"><p className="text-3xl mb-2">🚒</p><p className="text-sm font-medium">Aucune intervention</p></div>
-              : interventions.map(i => <InterventionItem key={i.id} intv={i} selected={selectedIntvId === i.id} onClick={() => handleIntvClick(i)} />)
-            )}
-            {tab === 'teams' && (teams.length === 0
-              ? <div className="flex flex-col items-center justify-center h-40 text-gray-300"><p className="text-3xl mb-2">👥</p><p className="text-sm font-medium">Aucune equipe connectee</p></div>
-              : teams.map(t => <TeamItem key={t.id} team={t} selected={selectedTeamId === t.id} onClick={() => handleTeamClick(t)} />)
-            )}
+          {/* ── SIDE PANEL ── */}
+          <div
+            className="w-full lg:w-[440px] m-2 md:m-3 lg:ml-1.5 rounded-2xl flex flex-col shrink-0 overflow-hidden lg:max-h-[60vh] bg-command-900"
+            style={{
+              border: '1px solid rgba(148,163,184,0.07)',
+              boxShadow: '0 4px 32px rgba(2,6,23,0.5)',
+            }}
+          >
+            {/* Tabs */}
+            <div
+              className="flex px-1 pt-1 shrink-0"
+              style={{ borderBottom: '1px solid rgba(148,163,184,0.07)' }}
+            >
+              {tabs.map(t => (
+                <button
+                  key={t.key}
+                  onClick={() => setTab(t.key)}
+                  className="flex-1 py-3 font-body text-[13px] font-semibold transition-all rounded-t-lg mx-0.5"
+                  style={tab === t.key ? {
+                    color: t.activeColor,
+                    borderBottom: `2.5px solid ${t.activeColor}`,
+                    background: t.activeBg,
+                  } : {
+                    color: '#334155',
+                    borderBottom: '2.5px solid transparent',
+                  }}
+                >
+                  {t.label}
+                  <span
+                    className="ml-1.5 px-1.5 py-0.5 rounded-md font-body text-[10px] font-bold"
+                    style={tab === t.key ? {
+                      background: t.activeBg,
+                      color: t.activeColor,
+                      border: `1px solid ${t.activeColor}40`,
+                    } : {
+                      background: 'rgba(148,163,184,0.05)',
+                      color: '#334155',
+                    }}
+                  >
+                    {t.count}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto px-3 py-2">
+              {tab === 'alerts' && (
+                pendingAlerts.length === 0
+                  ? (
+                    <div className="flex flex-col items-center justify-center h-40">
+                      <p className="text-3xl mb-2">✅</p>
+                      <p className="font-body text-sm font-medium text-command-700">Aucune alerte en attente</p>
+                    </div>
+                  )
+                  : pendingAlerts.map(a => (
+                    <AlertItem
+                      key={a.id} alert={a}
+                      onValidate={handleValidate} onReject={handleReject}
+                      onMerge={handleMerge} onCall={handleCall}
+                      selected={selectedAlertId === a.id}
+                      onClick={() => handleAlertClick(a)}
+                    />
+                  ))
+              )}
+              {tab === 'interventions' && (
+                interventions.length === 0
+                  ? (
+                    <div className="flex flex-col items-center justify-center h-40">
+                      <p className="text-3xl mb-2">🚒</p>
+                      <p className="font-body text-sm font-medium text-command-700">Aucune intervention</p>
+                    </div>
+                  )
+                  : interventions.map(i => (
+                    <InterventionItem key={i.id} intv={i} selected={selectedIntvId === i.id} onClick={() => handleIntvClick(i)} />
+                  ))
+              )}
+              {tab === 'teams' && (
+                teams.length === 0
+                  ? (
+                    <div className="flex flex-col items-center justify-center h-40">
+                      <p className="text-3xl mb-2">👥</p>
+                      <p className="font-body text-sm font-medium text-command-700">Aucune equipe connectee</p>
+                    </div>
+                  )
+                  : teams.map(t => (
+                    <TeamItem key={t.id} team={t} selected={selectedTeamId === t.id} onClick={() => handleTeamClick(t)} />
+                  ))
+              )}
+            </div>
           </div>
-        </div>
         </div>
 
         {/* ══════ RAPPORTS D'INTERVENTION ══════ */}
