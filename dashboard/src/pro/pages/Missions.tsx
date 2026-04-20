@@ -20,24 +20,9 @@ export default function Missions({ missions, onViewDetails, onAccept }: Props) {
   const activeMissions = missions.filter(m => m.statut !== 'TERMINE');
 
   const filters = [
-    {
-      key: 'all' as const,
-      label: `Toutes (${missions.length})`,
-      active: 'border-accent-600 text-accent-400 bg-accent-600/10',
-      inactive: 'border-white/8 text-slate-500 hover:border-white/15 hover:text-slate-400',
-    },
-    {
-      key: 'mine' as const,
-      label: 'Mes missions',
-      active: 'border-accent-600 text-accent-400 bg-accent-600/10',
-      inactive: 'border-white/8 text-slate-500 hover:border-white/15 hover:text-slate-400',
-    },
-    {
-      key: 'haute' as const,
-      label: 'Priorite haute',
-      active: 'border-red-600/60 text-red-400 bg-red-900/15',
-      inactive: 'border-white/8 text-slate-500 hover:border-white/15 hover:text-slate-400',
-    },
+    { key: 'all' as const, label: `Toutes (${missions.length})`, color: 'blue' },
+    { key: 'mine' as const, label: 'Mes missions', color: 'gray' },
+    { key: 'haute' as const, label: 'Priorite haute', color: 'red' },
   ];
 
   return (
@@ -45,14 +30,14 @@ export default function Missions({ missions, onViewDetails, onAccept }: Props) {
       {/* Filters */}
       <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
         {filters.map(f => (
-          <button
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`px-4 py-2 rounded-full text-xs font-bold border-2 whitespace-nowrap transition-all active:scale-[0.97] font-body ${
-              filter === f.key ? f.active : f.inactive
-            }`}
-            style={{ fontFamily: 'Manrope, sans-serif' }}
-          >
+          <button key={f.key} onClick={() => setFilter(f.key)}
+            className={`px-4 py-2 rounded-full text-xs font-bold border-2 whitespace-nowrap transition-all ${
+              filter === f.key
+                ? f.color === 'blue' ? 'border-blue-500 text-blue-700 bg-blue-50'
+                : f.color === 'red' ? 'border-red-500 text-red-700 bg-red-50'
+                : 'border-gray-800 text-gray-800 bg-gray-50'
+                : 'border-gray-200 text-gray-500 bg-white hover:bg-gray-50'
+            }`}>
             {f.label}
           </button>
         ))}
@@ -61,23 +46,8 @@ export default function Missions({ missions, onViewDetails, onAccept }: Props) {
       {/* Mission list */}
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div
-            className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
-            style={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.05)' }}
-          >
-            <span
-              className="text-slate-600 text-2xl font-mono"
-              style={{ fontFamily: 'JetBrains Mono, monospace' }}
-            >
-              &#x25A2;
-            </span>
-          </div>
-          <p
-            className="text-sm text-slate-500 font-body"
-            style={{ fontFamily: 'Manrope, sans-serif' }}
-          >
-            Aucune mission dans cette categorie
-          </p>
+          <p className="text-4xl mb-3">📋</p>
+          <p className="text-sm text-gray-400">Aucune mission dans cette categorie</p>
         </div>
       ) : (
         filtered.map(m => (

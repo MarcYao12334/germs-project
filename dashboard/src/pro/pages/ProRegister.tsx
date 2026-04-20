@@ -82,65 +82,24 @@ export default function ProRegister({ onDone }: Props) {
     onDone(team);
   };
 
-  const SectionLabel = ({ children }: { children: React.ReactNode }) => (
-    <p
-      className="text-[10px] font-bold text-slate-600 mb-3 tracking-widest uppercase font-body"
-      style={{ fontFamily: 'Manrope, sans-serif' }}
-    >
-      {children}
-    </p>
-  );
-
-  const FieldLabel = ({ children }: { children: React.ReactNode }) => (
-    <label
-      className="block text-[11px] font-bold text-slate-600 mb-1 tracking-wide uppercase font-body"
-      style={{ fontFamily: 'Manrope, sans-serif' }}
-    >
-      {children}
-    </label>
-  );
-
   // ── STEP 1: Team info ──
   if (step === 'team') {
     return (
       <div className="flex-1 overflow-y-auto p-5 fade-in">
-        <div className="text-center mb-7 mt-4">
-          <div
-            className="w-16 h-16 mx-auto mb-3 rounded-2xl flex items-center justify-center shadow-xl shadow-cyan-900/30"
-            style={{
-              background: 'linear-gradient(135deg, #0c4a6e 0%, #0891b2 100%)',
-              border: '1px solid rgba(8,145,178,0.20)',
-            }}
-          >
-            <span
-              className="text-lg font-bold text-white font-mono"
-              style={{ fontFamily: 'JetBrains Mono, monospace' }}
-            >
-              [P]
-            </span>
-          </div>
-          <h2
-            className="text-xl font-extrabold text-white mb-1 font-display"
-            style={{ fontFamily: 'Sora, sans-serif' }}
-          >
-            Creer une equipe
-          </h2>
-          <p
-            className="text-sm text-slate-500 font-body"
-            style={{ fontFamily: 'Manrope, sans-serif' }}
-          >
-            GERMS Pro &mdash; Inscription equipe pompiers
-          </p>
+        <div className="text-center mb-6 mt-4">
+          <div className="w-16 h-16 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-3xl shadow-xl shadow-blue-500/20">🚒</div>
+          <h2 className="text-xl font-extrabold text-gray-900">Creer une equipe</h2>
+          <p className="text-sm text-gray-500">GERMS Pro — Inscription equipe pompiers</p>
         </div>
 
         <form onSubmit={handleTeamSubmit} className="space-y-4">
           <div>
-            <FieldLabel>Nom de l'equipe *</FieldLabel>
+            <label className="block text-xs font-bold text-gray-500 mb-1">Nom de l'equipe *</label>
             <input className="input-field" value={nomEquipe} onChange={e => setNomEquipe(e.target.value)} placeholder="Equipe Alpha" required />
           </div>
 
           <div>
-            <FieldLabel>Unite / Caserne *</FieldLabel>
+            <label className="block text-xs font-bold text-gray-500 mb-1">Unite / Caserne *</label>
             <select value={unite} onChange={e => setUnite(e.target.value)} className="input-field">
               {unites.map(u => <option key={u} value={u}>{u}</option>)}
             </select>
@@ -148,63 +107,51 @@ export default function ProRegister({ onDone }: Props) {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <FieldLabel>Type de vehicule</FieldLabel>
+              <label className="block text-xs font-bold text-gray-500 mb-1">Type de vehicule</label>
               <select value={typeVehicule} onChange={e => setTypeVehicule(e.target.value)} className="input-field text-sm">
                 {vehiculeTypes.map(v => <option key={v} value={v}>{v}</option>)}
               </select>
             </div>
             <div>
-              <FieldLabel>Immatriculation</FieldLabel>
+              <label className="block text-xs font-bold text-gray-500 mb-1">Immatriculation</label>
               <input className="input-field" value={immatriculation} onChange={e => setImmatriculation(e.target.value)} placeholder="CI-1234-AB" />
             </div>
           </div>
 
           <div>
-            <FieldLabel>Email equipe *</FieldLabel>
+            <label className="block text-xs font-bold text-gray-500 mb-1">Email equipe *</label>
             <input type="email" className="input-field" value={email} onChange={e => setEmail(e.target.value)} placeholder="equipe@gspm.ci" required />
           </div>
           <div>
-            <FieldLabel>Telephone equipe *</FieldLabel>
+            <label className="block text-xs font-bold text-gray-500 mb-1">Telephone equipe *</label>
             <div className="flex gap-2">
-              <div
-                className="input-field w-20 flex items-center justify-center text-sm shrink-0 font-semibold text-slate-500 font-mono"
-                style={{ fontFamily: 'JetBrains Mono, monospace' }}
-              >
-                +225
-              </div>
+              <div className="input-field w-20 flex items-center justify-center text-sm bg-gray-50 shrink-0 font-semibold">🇨🇮 +225</div>
               <input type="tel" className="input-field flex-1" value={telephone} onChange={e => setTelephone(e.target.value)} placeholder="27 20 21 22 23" required />
             </div>
           </div>
 
-          <div
-            className="pt-4 mt-2"
-            style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}
-          >
-            <SectionLabel>Chef d'equipe</SectionLabel>
+          <div className="border-t border-gray-200 pt-4 mt-2">
+            <p className="text-xs font-bold text-gray-500 mb-3">CHEF D'EQUIPE</p>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <FieldLabel>Nom *</FieldLabel>
+                <label className="block text-xs font-bold text-gray-500 mb-1">Nom *</label>
                 <input className="input-field" value={chefNom} onChange={e => setChefNom(e.target.value)} placeholder="Kouame" required />
               </div>
               <div>
-                <FieldLabel>Prenoms *</FieldLabel>
+                <label className="block text-xs font-bold text-gray-500 mb-1">Prenoms *</label>
                 <input className="input-field" value={chefPrenoms} onChange={e => setChefPrenoms(e.target.value)} placeholder="Yao" required />
               </div>
             </div>
             <div className="mt-3">
-              <FieldLabel>Grade</FieldLabel>
+              <label className="block text-xs font-bold text-gray-500 mb-1">Grade</label>
               <select value={chefGrade} onChange={e => setChefGrade(e.target.value)} className="input-field">
                 {grades.map(g => <option key={g} value={g}>{g}</option>)}
               </select>
             </div>
           </div>
 
-          <button
-            type="submit"
-            className="w-full py-3.5 rounded-2xl font-bold text-[15px] text-white shadow-lg shadow-cyan-900/20 transition-all active:scale-[0.97] mt-4 font-display"
-            style={{ background: 'linear-gradient(180deg, #0891b2 0%, #0e7490 100%)', fontFamily: 'Sora, sans-serif' }}
-          >
-            Continuer &mdash; Ajouter les membres
+          <button type="submit" className="w-full py-3.5 bg-gradient-to-b from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-2xl font-bold text-[15px] shadow-lg shadow-blue-500/20 transition-all active:scale-[0.98] mt-4">
+            Continuer — Ajouter les membres
           </button>
         </form>
       </div>
@@ -215,79 +162,31 @@ export default function ProRegister({ onDone }: Props) {
   if (step === 'members') {
     return (
       <div className="flex-1 overflow-y-auto p-5 fade-in">
-        <div className="flex items-center gap-3 mb-6">
-          <button
-            onClick={() => setStep('team')}
-            className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-300 transition-all active:scale-[0.97]"
-            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
-          >
-            &#x2190;
-          </button>
+        <div className="flex items-center gap-3 mb-5">
+          <button onClick={() => setStep('team')} className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-lg">←</button>
           <div>
-            <h2
-              className="text-lg font-bold text-white font-display"
-              style={{ fontFamily: 'Sora, sans-serif' }}
-            >
-              Membres de l'equipe
-            </h2>
-            <p
-              className="text-xs text-slate-500 font-body"
-              style={{ fontFamily: 'Manrope, sans-serif' }}
-            >
-              {nomEquipe} &mdash; {unite}
-            </p>
+            <h2 className="text-lg font-bold text-gray-900">Membres de l'equipe</h2>
+            <p className="text-xs text-gray-500">{nomEquipe} — {unite}</p>
           </div>
         </div>
 
         {/* Current members list */}
         <div className="mb-5">
-          <p
-            className="text-[10px] font-bold text-slate-600 mb-2 tracking-widest uppercase font-body"
-            style={{ fontFamily: 'Manrope, sans-serif' }}
-          >
-            Equipe ({membres.length} membre{membres.length > 1 ? 's' : ''})
-          </p>
+          <p className="text-xs font-bold text-gray-500 mb-2">EQUIPE ({membres.length} membre{membres.length > 1 ? 's' : ''})</p>
           <div className="space-y-2">
             {membres.map((m, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-3 rounded-2xl px-4 py-3"
-                style={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.05)' }}
-              >
-                <div
-                  className="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold text-white shadow-md shadow-cyan-900/20"
-                  style={{ background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)' }}
-                >
+              <div key={i} className="flex items-center gap-3 bg-white/80 rounded-2xl px-4 py-3 border border-gray-100">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-xs font-bold text-white">
                   {m.prenoms[0]}{m.nom[0]}
                 </div>
                 <div className="flex-1">
-                  <p
-                    className="text-sm font-semibold text-slate-200 font-body"
-                    style={{ fontFamily: 'Manrope, sans-serif' }}
-                  >
-                    {m.prenoms} {m.nom}
-                  </p>
-                  <p
-                    className="text-[11px] text-slate-500 font-body"
-                    style={{ fontFamily: 'Manrope, sans-serif' }}
-                  >
-                    {m.grade} &mdash; {m.role}
-                  </p>
+                  <p className="text-sm font-semibold text-gray-900">{m.prenoms} {m.nom}</p>
+                  <p className="text-[11px] text-gray-500">{m.grade} — {m.role}</p>
                 </div>
                 {i === 0 ? (
-                  <span
-                    className="px-2 py-0.5 rounded-lg text-[10px] font-bold"
-                    style={{ background: 'rgba(8,145,178,0.15)', color: '#67e8f9', border: '1px solid rgba(8,145,178,0.25)' }}
-                  >
-                    Chef
-                  </span>
+                  <span className="px-2 py-0.5 rounded-lg bg-blue-100 text-blue-700 text-[10px] font-bold">Chef</span>
                 ) : (
-                  <button
-                    onClick={() => removeMember(i)}
-                    className="w-8 h-8 rounded-lg text-red-500 flex items-center justify-center text-sm hover:bg-red-900/20 transition-colors"
-                  >
-                    &#x2715;
-                  </button>
+                  <button onClick={() => removeMember(i)} className="w-8 h-8 rounded-lg bg-red-50 text-red-500 flex items-center justify-center text-sm hover:bg-red-100 transition-colors">✕</button>
                 )}
               </div>
             ))}
@@ -295,19 +194,8 @@ export default function ProRegister({ onDone }: Props) {
         </div>
 
         {/* Add member form */}
-        <div
-          className="rounded-2xl p-4 mb-5"
-          style={{
-            background: 'rgba(8,145,178,0.04)',
-            border: '2px dashed rgba(8,145,178,0.20)',
-          }}
-        >
-          <p
-            className="text-[10px] font-bold mb-3 tracking-widest uppercase font-body"
-            style={{ fontFamily: 'Manrope, sans-serif', color: '#0891b2' }}
-          >
-            + Ajouter un membre
-          </p>
+        <div className="bg-blue-50/50 border-2 border-dashed border-blue-200 rounded-2xl p-4 mb-5">
+          <p className="text-xs font-bold text-blue-600 mb-3">+ AJOUTER UN MEMBRE</p>
           <div className="grid grid-cols-2 gap-2 mb-2">
             <input className="input-field text-sm" value={newNom} onChange={e => setNewNom(e.target.value)} placeholder="Nom" />
             <input className="input-field text-sm" value={newPrenoms} onChange={e => setNewPrenoms(e.target.value)} placeholder="Prenoms" />
@@ -320,22 +208,14 @@ export default function ProRegister({ onDone }: Props) {
               {roles.map(r => <option key={r} value={r}>{r}</option>)}
             </select>
           </div>
-          <button
-            type="button"
-            onClick={addMember}
-            disabled={!newNom || !newPrenoms}
-            className="w-full py-2.5 rounded-xl font-semibold text-sm text-white transition-all active:scale-[0.97] disabled:opacity-40 shadow-md shadow-cyan-900/15 font-body"
-            style={{ background: 'linear-gradient(180deg, #0891b2 0%, #0e7490 100%)', fontFamily: 'Manrope, sans-serif' }}
-          >
+          <button type="button" onClick={addMember} disabled={!newNom || !newPrenoms}
+            className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-sm transition-all active:scale-[0.98] disabled:opacity-40">
             + Ajouter a l'equipe
           </button>
         </div>
 
-        <button
-          onClick={handleMembersSubmit}
-          className="w-full py-3.5 rounded-2xl font-bold text-[15px] text-white shadow-lg shadow-emerald-900/20 transition-all active:scale-[0.97] font-display"
-          style={{ background: 'linear-gradient(180deg, #059669 0%, #047857 100%)', fontFamily: 'Sora, sans-serif' }}
-        >
+        <button onClick={handleMembersSubmit}
+          className="w-full py-3.5 bg-gradient-to-b from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white rounded-2xl font-bold text-[15px] shadow-lg shadow-emerald-500/20 transition-all active:scale-[0.98]">
           Valider l'equipe ({membres.length} membres)
         </button>
       </div>
@@ -345,100 +225,28 @@ export default function ProRegister({ onDone }: Props) {
   // ── STEP 3: OTP Verification ──
   return (
     <div className="flex-1 flex flex-col p-6 fade-in">
-      <h2
-        className="text-xl font-bold text-white mb-2 mt-8 font-display"
-        style={{ fontFamily: 'Sora, sans-serif' }}
-      >
-        Verification 2FA
-      </h2>
-      <p
-        className="text-sm text-slate-500 mb-1 font-body"
-        style={{ fontFamily: 'Manrope, sans-serif' }}
-      >
-        Code envoye par SMS au
-      </p>
-      <p
-        className="text-sm font-bold text-slate-300 mb-6 font-mono"
-        style={{ fontFamily: 'JetBrains Mono, monospace' }}
-      >
-        +225 {telephone}
-      </p>
+      <h2 className="text-xl font-bold text-gray-900 mb-2 mt-8">Verification 2FA</h2>
+      <p className="text-sm text-gray-500 mb-1">Code envoye par SMS au</p>
+      <p className="text-sm font-bold text-gray-800 mb-6">🇨🇮 +225 {telephone}</p>
 
-      <div
-        className="rounded-2xl p-4 mb-5"
-        style={{ background: 'rgba(5,150,105,0.07)', border: '1px solid rgba(5,150,105,0.18)' }}
-      >
-        <p
-          className="text-[10px] font-bold text-emerald-500 mb-1 tracking-widest uppercase font-body"
-          style={{ fontFamily: 'Manrope, sans-serif' }}
-        >
-          Recapitulatif
-        </p>
-        <p
-          className="text-sm text-slate-200 font-semibold font-display"
-          style={{ fontFamily: 'Sora, sans-serif' }}
-        >
-          {nomEquipe}
-        </p>
-        <p
-          className="text-xs text-slate-500 mt-0.5 font-body"
-          style={{ fontFamily: 'Manrope, sans-serif' }}
-        >
-          {unite} &mdash; {membres.length} membres
-        </p>
-        <p
-          className="text-xs text-slate-500 font-body"
-          style={{ fontFamily: 'Manrope, sans-serif' }}
-        >
-          Chef: {chefGrade} {chefPrenoms} {chefNom}
-        </p>
+      <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 mb-5">
+        <p className="text-xs font-bold text-emerald-600 mb-1">Recapitulatif</p>
+        <p className="text-sm text-gray-800 font-semibold">{nomEquipe}</p>
+        <p className="text-xs text-gray-500">{unite} — {membres.length} membres</p>
+        <p className="text-xs text-gray-500">Chef: {chefGrade} {chefPrenoms} {chefNom}</p>
       </div>
 
-      <div
-        className="rounded-2xl px-4 py-3 mb-4 text-center"
-        style={{ background: 'rgba(180,83,9,0.09)', border: '1px solid rgba(180,83,9,0.25)' }}
-      >
-        <p
-          className="text-[9px] font-bold uppercase tracking-widest mb-1 font-body"
-          style={{ fontFamily: 'Manrope, sans-serif', color: '#d97706' }}
-        >
-          Mode Test &mdash; Code de verification
-        </p>
-        <p
-          className="text-2xl font-extrabold tracking-[0.3em] font-mono"
-          style={{ fontFamily: 'JetBrains Mono, monospace', color: '#fbbf24' }}
-        >
-          {generatedOtp}
-        </p>
+      <div className="bg-amber-50 border border-amber-300 rounded-2xl px-4 py-2.5 mb-4 text-center">
+        <p className="text-[10px] text-amber-600 font-bold uppercase tracking-wider mb-1">Mode Test — Code de verification</p>
+        <p className="text-2xl font-mono font-extrabold text-amber-700 tracking-[0.3em]">{generatedOtp}</p>
       </div>
-
       <form onSubmit={handleVerify} className="flex-1 flex flex-col">
-        <input
-          type="text"
-          className="input-field text-center text-3xl tracking-[0.5em] py-5 mb-6 font-mono"
-          style={{ fontFamily: 'JetBrains Mono, monospace' }}
-          value={otp}
-          onChange={e => setOtp(e.target.value)}
-          placeholder="000000"
-          maxLength={6}
-          autoFocus
-        />
+        <input type="text" className="input-field text-center text-3xl tracking-[0.5em] font-mono py-5 mb-6" value={otp} onChange={e => setOtp(e.target.value)} placeholder="000000" maxLength={6} autoFocus />
         <div className="flex-1" />
-        <button
-          type="submit"
-          className="w-full py-3.5 rounded-2xl font-bold text-[15px] text-white shadow-lg shadow-cyan-900/20 transition-all active:scale-[0.97] font-display"
-          style={{ background: 'linear-gradient(180deg, #0891b2 0%, #0e7490 100%)', fontFamily: 'Sora, sans-serif' }}
-        >
+        <button type="submit" className="w-full py-3.5 bg-gradient-to-b from-blue-600 to-blue-700 text-white rounded-2xl font-bold text-[15px] shadow-lg shadow-blue-500/20 transition-all active:scale-[0.98]">
           Activer GERMS Pro
         </button>
-        <button
-          type="button"
-          onClick={() => setStep('members')}
-          className="text-sm text-slate-600 text-center mt-3 hover:text-slate-400 transition-colors font-body"
-          style={{ fontFamily: 'Manrope, sans-serif' }}
-        >
-          &#x2190; Retour
-        </button>
+        <button type="button" onClick={() => setStep('members')} className="text-sm text-gray-400 text-center mt-3">← Retour</button>
       </form>
     </div>
   );
