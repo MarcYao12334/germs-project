@@ -14,11 +14,14 @@ import { Mission, ProTeam } from './lib/data';
 
 type Screen = 'register' | 'missions' | 'detail' | 'bilan' | 'carte' | 'alertes' | 'equipe';
 
+interface MapTarget { lat: number; lng: number; label: string; missionId: string; }
+
 export default function ProApp() {
   const [team, setTeam] = useState<ProTeam | null>(proStorage.getTeam());
   const [screen, setScreen] = useState<Screen>(team ? 'missions' : 'register');
   const [missions, setMissions] = useState<Mission[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [mapTarget, setMapTarget] = useState<MapTarget | null>(null);
 
   // Listen for new missions from Dashboard — only for THIS team
   useEffect(() => {
@@ -78,11 +81,13 @@ export default function ProApp() {
     setMissions(prev => prev.map(m => m.id === id ? { ...m, statut: 'EN_ROUTE' as const } : m));
     proSync.send('intervention:status-changed', { interventionId: id, statut: 'EN_ROUTE' });
     setSelectedId(id);
-    // Ouvrir la navigation GPS automatiquement
+    // Ouvrir la carte intégrée automatiquement
     if (mission && mission.lat && mission.lng) {
-      window.open(`https://www.google.com/maps/dir/?api=1&destination=${mission.lat},${mission.lng}&travelmode=driving`, '_blank');
+      setMapTarget({ lat: mission.lat, lng: mission.lng, label: mission.adresse, missionId: mission.id });
+      setScreen('carte');
+    } else {
+      setScreen('detail');
     }
-    setScreen('detail');
   };
 
   const handleStatusChange = (id: string, newStatus: string) => {
@@ -104,7 +109,9 @@ export default function ProApp() {
   };
 
   const handleNavigate = (lat: number, lng: number) => {
-    window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`, '_blank');
+    const mission = missions.find(m => m.lat === lat && m.lng === lng);
+    setMapTarget({ lat, lng, label: mission?.adresse || `${lat.toFixed(4)}, ${lng.toFixed(4)}`, missionId: mission?.id || '' });
+    setScreen('carte');
   };
 
   const handleNav = (tab: string) => {
@@ -177,7 +184,7 @@ export default function ProApp() {
             <button onClick={() => setScreen('missions')} className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold">Retour aux missions</button>
           </div>
         )}
-        {screen === 'carte' && <MapScreen />}
+        {screen === 'carte' && <MapScreen target={mapTarget} missions={missions} onViewDetails={handleViewDetails} />}
         {screen === 'alertes' && <AlertsList missions={missions} onViewDetails={handleViewDetails} />}
         {screen === 'equipe' && <TeamView team={team} onTeamUpdate={handleTeamUpdate} onLogout={handleLogout} />}
       </div>
