@@ -132,16 +132,10 @@ export default function MapScreen({ target, missions, onViewDetails }: Props) {
       {/* Bottom action bar */}
       {target && (
         <div className="bg-white border-t border-gray-100 px-4 py-3 shrink-0">
-          <div className="flex gap-2">
-            <button onClick={() => onViewDetails(target.missionId)}
-              className="flex-1 py-2.5 bg-gray-800 hover:bg-gray-700 text-white rounded-xl font-semibold text-sm transition-all active:scale-[0.98]">
-              Voir la mission
-            </button>
-            <button onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${target.lat},${target.lng}&travelmode=driving`, '_blank')}
-              className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-sm transition-all active:scale-[0.98]">
-              🧭 Google Maps
-            </button>
-          </div>
+          <button onClick={() => onViewDetails(target.missionId)}
+            className="w-full py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-xl font-semibold text-sm transition-all active:scale-[0.98]">
+            Voir les details de la mission
+          </button>
         </div>
       )}
 
