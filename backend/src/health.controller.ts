@@ -17,3 +17,12 @@ export class HealthController {
     return { status: 'ready' };
   }
 }
+
+// Ping controller at root level (no /api prefix) for keep-alive
+@Controller({ path: '/', host: undefined })
+export class PingController {
+  @Get('ping')
+  ping() {
+    return { pong: true, ts: Date.now() };
+  }
+}

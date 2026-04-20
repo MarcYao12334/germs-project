@@ -8,7 +8,7 @@ import { InterventionsModule } from './modules/interventions/interventions.modul
 import { TeamsModule } from './modules/teams/teams.module';
 import { UsersModule } from './modules/users/users.module';
 import { WebsocketModule } from './websocket/websocket.module';
-import { HealthController } from './health.controller';
+import { HealthController, PingController } from './health.controller';
 
 @Module({
   imports: [
@@ -47,6 +47,6 @@ import { HealthController } from './health.controller';
     UsersModule,
     WebsocketModule,
   ],
-  controllers: [HealthController],
+  controllers: [HealthController, PingController],
 })
 export class AppModule {}
