@@ -1,9 +1,9 @@
 import { useState } from 'react';
 
 export default function Settings() {
-  const [country, setCountry] = useState('FR');
-  const [timezone, setTimezone] = useState('Europe/Paris');
-  const [currency, setCurrency] = useState('EUR');
+  const [country, setCountry] = useState('CI');
+  const [timezone, setTimezone] = useState('Africa/Abidjan');
+  const [currency, setCurrency] = useState('XOF');
   const [distanceUnit, setDistanceUnit] = useState('km');
   const [duplicateRadius, setDuplicateRadius] = useState(500);
   const [channels, setChannels] = useState({ sms: true, whatsapp: true, email: true, authenticator: false });

@@ -39,7 +39,7 @@ export default function Login({ onLogin }: LoginProps) {
   const [password, setPassword] = useState('');
   const [authMethod, setAuthMethod] = useState('sms');
   const [otpCode, setOtpCode] = useState('');
-  const [countryCode, setCountryCode] = useState('FR');
+  const [countryCode, setCountryCode] = useState('CI');
 
   // Register
   const [regNom, setRegNom] = useState('');
@@ -48,7 +48,7 @@ export default function Login({ onLogin }: LoginProps) {
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regConfirm, setRegConfirm] = useState('');
-  const [regCountry, setRegCountry] = useState('FR');
+  const [regCountry, setRegCountry] = useState('CI');
   const [regRole, setRegRole] = useState('OPERATEUR');
   const [regAuth, setRegAuth] = useState('sms');
   const [regOtp, setRegOtp] = useState('');

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import MobileShell from './components/MobileShell';
 import BottomNav from './components/BottomNav';
 import ProRegister from './pages/ProRegister';
@@ -22,19 +22,24 @@ export default function ProApp() {
   const [missions, setMissions] = useState<Mission[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mapTarget, setMapTarget] = useState<MapTarget | null>(null);
+  const teamRef = useRef<ProTeam | null>(team);
 
-  // Listen for new missions from Dashboard — only for THIS team
+  // Keep ref in sync with state
+  useEffect(() => { teamRef.current = team; }, [team]);
+
+  // Listen for new missions from Dashboard
   useEffect(() => {
     const unsubs = [
       proSync.on('intervention:created', (p: any) => {
+        const currentTeam = teamRef.current;
         // Filter by country — only accept missions from the same country
-        if (p.pays && team && p.pays !== team.pays) {
-          console.log('[Pro] Mission ignored — different country:', p.pays, 'vs', team?.pays);
+        if (p.pays && currentTeam && currentTeam.pays && p.pays !== currentTeam.pays) {
+          console.log('[Pro] Mission ignored — different country:', p.pays, 'vs', currentTeam.pays);
           return;
         }
         // Only accept missions targeted to this team (or no target = broadcast)
-        if (p.targetTeamCode && team && p.targetTeamCode !== team.code) {
-          console.log('[Pro] Mission ignored — targeted to', p.targetTeamCode, 'not', team?.code);
+        if (p.targetTeamCode && currentTeam && p.targetTeamCode !== currentTeam.code) {
+          console.log('[Pro] Mission ignored — targeted to', p.targetTeamCode, 'not', currentTeam.code);
           return;
         }
         console.log('[Pro] New mission received:', p.code);
