@@ -7,6 +7,7 @@ const statusLabels: Record<string, { label: string; icon: string; color: string 
   EN_ROUTE: { label: 'En route', icon: '🚒', color: 'bg-purple-500 text-white' },
   SUR_PLACE: { label: 'Sur place', icon: '🔥', color: 'bg-orange-500 text-white' },
   TERMINE: { label: 'Terminee', icon: '✅', color: 'bg-emerald-500 text-white' },
+  ANNULEE: { label: 'Annulee', icon: '🚫', color: 'bg-red-500 text-white' },
 };
 
 interface Props {
@@ -125,6 +126,14 @@ export default function MissionDetail({ mission, onBack, onStatusChange, onCall,
           <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-center">
             <p className="text-2xl mb-1">✅</p>
             <p className="font-bold text-emerald-700">Intervention terminee</p>
+          </div>
+        )}
+
+        {mission.statut === 'ANNULEE' && (
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-center">
+            <p className="text-2xl mb-1">🚫</p>
+            <p className="font-bold text-red-700">Mission annulee</p>
+            <p className="text-xs text-red-500 mt-1">Cette mission a ete annulee par le centre de commandement.</p>
           </div>
         )}
       </div>

@@ -272,12 +272,13 @@ function MapController({ target }: { target: { lat: number; lng: number } | null
 // ════════════════════════════════════════════
 //  INTERVENTION ITEM
 // ════════════════════════════════════════════
-function InterventionItem({ intv, selected, onClick }: { intv: Intervention; selected?: boolean; onClick?: () => void }) {
+function InterventionItem({ intv, selected, onClick, onCancel }: { intv: Intervention; selected?: boolean; onClick?: () => void; onCancel?: (id: string) => void }) {
   const conf: Record<string, { bg: string; dot: string; label: string }> = {
     NOUVEAU: { bg: 'bg-red-50 text-red-600 border-red-200', dot: 'bg-red-500', label: 'Nouveau' },
     EN_ROUTE: { bg: 'bg-purple-50 text-purple-600 border-purple-200', dot: 'bg-purple-500', label: 'En route' },
     SUR_PLACE: { bg: 'bg-orange-50 text-orange-600 border-orange-200', dot: 'bg-orange-500', label: 'Sur place' },
     TERMINE: { bg: 'bg-emerald-50 text-emerald-600 border-emerald-200', dot: 'bg-emerald-500', label: 'Terminee' },
+    ANNULEE: { bg: 'bg-gray-100 text-gray-500 border-gray-300', dot: 'bg-gray-400', label: 'Annulee' },
   };
   const icons: Record<string, string> = { 'Incendie': '🔥', 'Accident de route': '🚗', 'Fuite de gaz': '💨', 'Inondation': '🌊', 'Secours à personne': '🏥' };
   const st = conf[intv.statut] || conf.NOUVEAU;
@@ -305,6 +306,14 @@ function InterventionItem({ intv, selected, onClick }: { intv: Intervention; sel
           </div>
         )}
       </div>
+      {intv.statut !== 'TERMINE' && intv.statut !== 'ANNULEE' && onCancel && (
+        <div className="mt-2 flex justify-end">
+          <button onClick={(e) => { e.stopPropagation(); onCancel(intv.id); }}
+            className="px-3 py-1.5 rounded-lg border border-red-200 text-red-500 text-[11px] font-semibold hover:bg-red-50 transition-all active:scale-[0.97]">
+            ✕ Annuler la mission
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -758,6 +767,22 @@ export default function CommandCenter({ user, onLogout }: Props) {
   const handleMerge = useCallback((id: string) => setAlerts(prev => prev.map(a => a.id === id ? { ...a, statut: 'DUPLICATE' as const } : a)), []);
   const handleCall = useCallback((tel: string) => window.alert(`Appel vers ${tel} (simulation)`), []);
 
+  const handleCancelIntervention = useCallback((id: string) => {
+    const intv = interventions.find(i => i.id === id);
+    if (!intv) return;
+    // Update intervention status
+    setInterventions(prev => prev.map(i => i.id === id ? { ...i, statut: 'ANNULEE' as any, fin_at: new Date().toISOString() } : i));
+    setStats(s => ({ ...s, interventions_actives: Math.max(0, s.interventions_actives - 1) }));
+    // Free the assigned team
+    if (intv.equipe_id) {
+      setTeams(prev => prev.map(t => t.id === intv.equipe_id ? { ...t, statut: 'DISPONIBLE' as const } : t));
+    }
+    // Notify Pro app — mission cancelled
+    dashboardSync.send('intervention:status-changed', { interventionId: id, statut: 'ANNULEE' });
+    // Notify Citizen app — intervention cancelled
+    dashboardSync.send('intervention:cancelled', { interventionId: id, alertId: intv.alerte_principale_id });
+  }, [interventions]);
+
   const tabs = [
     { key: 'alerts' as const, label: 'Alertes', count: pendingAlerts.length, color: 'bg-amber-500' },
     { key: 'interventions' as const, label: 'Interventions', count: interventions.length, color: 'bg-blue-500' },
@@ -875,7 +900,7 @@ export default function CommandCenter({ user, onLogout }: Props) {
             )}
             {tab === 'interventions' && (interventions.length === 0
               ? <div className="flex flex-col items-center justify-center h-40 text-gray-300"><p className="text-3xl mb-2">🚒</p><p className="text-sm font-medium">Aucune intervention</p></div>
-              : interventions.map(i => <InterventionItem key={i.id} intv={i} selected={selectedIntvId === i.id} onClick={() => handleIntvClick(i)} />)
+              : interventions.map(i => <InterventionItem key={i.id} intv={i} selected={selectedIntvId === i.id} onClick={() => handleIntvClick(i)} onCancel={handleCancelIntervention} />)
             )}
             {tab === 'teams' && (teams.length === 0
               ? <div className="flex flex-col items-center justify-center h-40 text-gray-300"><p className="text-3xl mb-2">👥</p><p className="text-sm font-medium">Aucune equipe connectee</p></div>

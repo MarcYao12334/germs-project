@@ -76,6 +76,12 @@ export default function CitizenApp() {
           return { ...prev, team: { ...prev.team, eta_minutes: p.eta_minutes, distance_km: p.distance_km } };
         });
       }),
+      citizenSync.on('intervention:cancelled', (p: any) => {
+        setActiveAlert(prev => {
+          if (!prev) return prev;
+          return { ...prev, currentStep: -2, alert: { ...prev.alert, statut: 'REJECTED' as const } };
+        });
+      }),
     ];
     return () => { unsubs.forEach(u => u()); };
   }, []);

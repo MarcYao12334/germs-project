@@ -14,6 +14,7 @@ export default function Tracking({ activeAlert }: { activeAlert: ActiveAlert | n
   }
 
   const isRejected = activeAlert.currentStep === -1;
+  const isCancelled = activeAlert.currentStep === -2;
 
   return (
     <div className="flex-1 p-5 fade-in">
@@ -45,8 +46,18 @@ export default function Tracking({ activeAlert }: { activeAlert: ActiveAlert | n
         </div>
       )}
 
+      {/* Cancelled */}
+      {isCancelled && (
+        <div className="bg-orange-50 border border-orange-200 rounded-2xl p-5 text-center mb-5 slide-up">
+          <p className="text-3xl mb-2">🚫</p>
+          <p className="font-bold text-orange-700 mb-1">Intervention annulee</p>
+          <p className="text-sm text-orange-600">Le centre de commandement a annule l'intervention en cours.</p>
+          <p className="text-xs text-gray-400 mt-2">Vous pouvez soumettre une nouvelle alerte si necessaire.</p>
+        </div>
+      )}
+
       {/* Timeline */}
-      {!isRejected && (
+      {!isRejected && !isCancelled && (
         <>
           <p className="text-sm font-semibold text-gray-700 mb-3">Statut</p>
           <div className="mb-5">

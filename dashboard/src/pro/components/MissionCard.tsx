@@ -10,6 +10,7 @@ const statusBadge: Record<string, { bg: string; label: string }> = {
   EN_ROUTE: { bg: 'bg-emerald-100 text-emerald-700 border-emerald-200', label: 'En route' },
   SUR_PLACE: { bg: 'bg-orange-100 text-orange-700 border-orange-200', label: 'Sur place' },
   TERMINE: { bg: 'bg-gray-100 text-gray-500 border-gray-200', label: 'Terminee' },
+  ANNULEE: { bg: 'bg-red-100 text-red-500 border-red-200', label: 'Annulee' },
 };
 
 const prioriteBadge: Record<string, { bg: string }> = {
