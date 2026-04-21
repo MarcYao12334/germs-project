@@ -653,16 +653,30 @@ ${rapports.map((r, i) => `
 // ════════════════════════════════════════════
 export default function CommandCenter({ user, onLogout }: Props) {
   const emptyStats = { interventions_actives: 0, alertes_en_attente: 0, equipes_disponibles: 0, temps_moyen_minutes: 0, taux_reussite: 0 };
-  const [stats, setStats] = useState(emptyStats);
-  const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [interventions, setInterventions] = useState<Intervention[]>([]);
-  const [teams, setTeams] = useState<Team[]>([]);
+
+  // Persist state in localStorage to survive page refresh
+  const loadState = <T,>(key: string, fallback: T): T => {
+    try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch { return fallback; }
+  };
+  const saveState = (key: string, value: any) => { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} };
+
+  const [stats, setStats] = useState(() => loadState('germs_dash_stats', emptyStats));
+  const [alerts, setAlerts] = useState<Alert[]>(() => loadState('germs_dash_alerts', []));
+  const [interventions, setInterventions] = useState<Intervention[]>(() => loadState('germs_dash_interventions', []));
+  const [teams, setTeams] = useState<Team[]>(() => loadState('germs_dash_teams', []));
   const [tab, setTab] = useState<'alerts' | 'interventions' | 'teams'>('alerts');
-  const [rapports, setRapports] = useState<any[]>([]);
+  const [rapports, setRapports] = useState<any[]>(() => loadState('germs_dash_rapports', []));
   const [selectedIntvId, setSelectedIntvId] = useState<string | null>(null);
   const [selectedAlertId, setSelectedAlertId] = useState<string | null>(null);
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [mapTarget, setMapTarget] = useState<{ lat: number; lng: number } | null>(null);
+
+  // Auto-save to localStorage on state change
+  useEffect(() => { saveState('germs_dash_alerts', alerts); }, [alerts]);
+  useEffect(() => { saveState('germs_dash_interventions', interventions); }, [interventions]);
+  useEffect(() => { saveState('germs_dash_teams', teams); }, [teams]);
+  useEffect(() => { saveState('germs_dash_rapports', rapports); }, [rapports]);
+  useEffect(() => { saveState('germs_dash_stats', stats); }, [stats]);
 
   const countryCenter = getCountryCenter(user.pays || 'CI');
 
