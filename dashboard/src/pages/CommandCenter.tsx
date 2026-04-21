@@ -8,11 +8,14 @@ import 'leaflet/dist/leaflet.css';
 interface Props { user: any; onLogout: () => void; }
 
 // ════════════════════════════════════════════
-//  ALERT SOUND — generates alarm tone via AudioContext
+//  ALERT SOUND — Fire truck siren via AudioContext
 // ════════════════════════════════════════════
 class AlertSound {
   private ctx: AudioContext | null = null;
-  private intervalId: ReturnType<typeof setInterval> | null = null;
+  private osc: OscillatorNode | null = null;
+  private gainNode: GainNode | null = null;
+  private lfo: OscillatorNode | null = null;
+  private lfoGain: GainNode | null = null;
   playing = false;
 
   play() {
@@ -21,31 +24,44 @@ class AlertSound {
     try {
       this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
     } catch { return; }
-    const beep = () => {
-      if (!this.ctx || !this.playing) return;
-      // Two-tone alarm: high then low
-      [880, 660].forEach((freq, i) => {
-        const osc = this.ctx!.createOscillator();
-        const gain = this.ctx!.createGain();
-        osc.connect(gain);
-        gain.connect(this.ctx!.destination);
-        osc.type = 'square';
-        osc.frequency.value = freq;
-        gain.gain.value = 0.15;
-        const start = this.ctx!.currentTime + i * 0.25;
-        osc.start(start);
-        gain.gain.setValueAtTime(0.15, start);
-        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.2);
-        osc.stop(start + 0.25);
-      });
-    };
-    beep();
-    this.intervalId = setInterval(beep, 2000);
+
+    // Main siren oscillator — sweeps between 650Hz and 1100Hz
+    this.osc = this.ctx.createOscillator();
+    this.osc.type = 'sawtooth';
+    this.osc.frequency.value = 850;
+
+    // LFO to modulate frequency (creates the wailing siren effect)
+    this.lfo = this.ctx.createOscillator();
+    this.lfo.type = 'sine';
+    this.lfo.frequency.value = 0.7; // 0.7 Hz = slow sweep like a fire truck
+
+    this.lfoGain = this.ctx.createGain();
+    this.lfoGain.gain.value = 250; // Sweep range: 850 ± 250 = 600Hz to 1100Hz
+
+    this.lfo.connect(this.lfoGain);
+    this.lfoGain.connect(this.osc.frequency);
+
+    // Volume envelope
+    this.gainNode = this.ctx.createGain();
+    this.gainNode.gain.value = 0.2;
+
+    this.osc.connect(this.gainNode);
+    this.gainNode.connect(this.ctx.destination);
+
+    this.osc.start();
+    this.lfo.start();
   }
 
   stop() {
     this.playing = false;
-    if (this.intervalId) { clearInterval(this.intervalId); this.intervalId = null; }
+    try {
+      this.osc?.stop();
+      this.lfo?.stop();
+    } catch {}
+    this.osc = null;
+    this.lfo = null;
+    this.lfoGain = null;
+    this.gainNode = null;
     if (this.ctx) { this.ctx.close().catch(() => {}); this.ctx = null; }
   }
 }
