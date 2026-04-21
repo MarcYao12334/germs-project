@@ -8,6 +8,51 @@ import 'leaflet/dist/leaflet.css';
 interface Props { user: any; onLogout: () => void; }
 
 // ════════════════════════════════════════════
+//  ALERT SOUND — generates alarm tone via AudioContext
+// ════════════════════════════════════════════
+class AlertSound {
+  private ctx: AudioContext | null = null;
+  private intervalId: ReturnType<typeof setInterval> | null = null;
+  playing = false;
+
+  play() {
+    if (this.playing) return;
+    this.playing = true;
+    try {
+      this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    } catch { return; }
+    const beep = () => {
+      if (!this.ctx || !this.playing) return;
+      // Two-tone alarm: high then low
+      [880, 660].forEach((freq, i) => {
+        const osc = this.ctx!.createOscillator();
+        const gain = this.ctx!.createGain();
+        osc.connect(gain);
+        gain.connect(this.ctx!.destination);
+        osc.type = 'square';
+        osc.frequency.value = freq;
+        gain.gain.value = 0.15;
+        const start = this.ctx!.currentTime + i * 0.25;
+        osc.start(start);
+        gain.gain.setValueAtTime(0.15, start);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.2);
+        osc.stop(start + 0.25);
+      });
+    };
+    beep();
+    this.intervalId = setInterval(beep, 2000);
+  }
+
+  stop() {
+    this.playing = false;
+    if (this.intervalId) { clearInterval(this.intervalId); this.intervalId = null; }
+    if (this.ctx) { this.ctx.close().catch(() => {}); this.ctx = null; }
+  }
+}
+
+const alertSound = new AlertSound();
+
+// ════════════════════════════════════════════
 //  TOP BAR
 // ════════════════════════════════════════════
 function TopBar({ user, onLogout }: { user: any; onLogout: () => void }) {
@@ -248,7 +293,7 @@ function AlertItem({ alert, onValidate, onReject, onMerge, onCall, selected, onC
             <span>✕</span> Rejeter
           </button>
           <button onClick={() => onCall(alert.citoyen_telephone)} className="btn-outline-green text-[12px]">
-            <span>📞</span> Appeler
+            <span>💬</span> WhatsApp
           </button>
         </div>
       )}
@@ -649,6 +694,8 @@ export default function CommandCenter({ user, onLogout }: Props) {
         return [incoming, ...prev];
       });
       setStats(s => ({ ...s, alertes_en_attente: s.alertes_en_attente + 1 }));
+      // Declencher l'alarme sonore
+      alertSound.play();
     });
 
     // Listen for Pro firefighter status changes → update interventions
@@ -699,6 +746,7 @@ export default function CommandCenter({ user, onLogout }: Props) {
       return prev.map(a => a.id === id ? { ...a, statut: 'VALIDATED' as const } : a);
     });
     setStats(s => ({ ...s, alertes_en_attente: Math.max(0, s.alertes_en_attente - 1), interventions_actives: s.interventions_actives + 1 }));
+    alertSound.stop();
 
     const alert = foundAlert;
 
@@ -762,10 +810,15 @@ export default function CommandCenter({ user, onLogout }: Props) {
     setAlerts(prev => prev.map(a => a.id === id ? { ...a, statut: 'REJECTED' as const } : a));
     setStats(s => ({ ...s, alertes_en_attente: Math.max(0, s.alertes_en_attente - 1) }));
     dashboardSync.send('alert:rejected', { alertId: id, motif: 'Fausse alerte' });
+    alertSound.stop();
   }, []);
 
   const handleMerge = useCallback((id: string) => setAlerts(prev => prev.map(a => a.id === id ? { ...a, statut: 'DUPLICATE' as const } : a)), []);
-  const handleCall = useCallback((tel: string) => window.alert(`Appel vers ${tel} (simulation)`), []);
+  const handleCall = useCallback((tel: string) => {
+    const clean = tel.replace(/[\s\-\(\)]/g, '').replace(/^\+/, '');
+    window.open(`https://wa.me/${clean}`, '_blank');
+    alertSound.stop();
+  }, []);
 
   const handleCancelIntervention = useCallback((id: string) => {
     const intv = interventions.find(i => i.id === id);
