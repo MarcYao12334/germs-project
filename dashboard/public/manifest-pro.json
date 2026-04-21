@@ -1,0 +1,26 @@
+{
+  "name": "GERMS Pro - Pompiers & Secouristes",
+  "short_name": "GERMS Pro",
+  "description": "Application professionnelle pour equipes de pompiers et secouristes - Global Emergency Response Management System",
+  "start_url": "/pro",
+  "scope": "/pro",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0891b2",
+  "orientation": "portrait",
+  "categories": ["utilities", "safety"],
+  "lang": "fr",
+  "icons": [
+    { "src": "/icon-pro-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-pro-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Voir les missions",
+      "short_name": "Missions",
+      "url": "/pro",
+      "icons": [{ "src": "/icon-pro-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

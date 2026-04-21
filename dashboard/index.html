@@ -3,16 +3,50 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="theme-color" content="#dc2626" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="GERMS" />
     <meta name="description" content="Global Emergency Response Management System" />
-    <link rel="manifest" href="/manifest.json" />
-    <link rel="apple-touch-icon" href="/icon-192.svg" />
-    <title>GERMS</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <script>
+      // Dynamic manifest + theme based on app path
+      (function() {
+        var p = location.pathname;
+        var link = document.createElement('link');
+        link.rel = 'manifest';
+        var meta = document.querySelector('meta[name="theme-color"]') || document.createElement('meta');
+        meta.name = 'theme-color';
+        var title = document.querySelector('title') || document.createElement('title');
+        var appleMeta = document.createElement('meta');
+        appleMeta.name = 'apple-mobile-web-app-title';
+
+        if (p.indexOf('/citizen') === 0) {
+          link.href = '/manifest-alert.json';
+          meta.content = '#b45309';
+          title.textContent = 'GERMS Alert';
+          appleMeta.content = 'GERMS Alert';
+          document.querySelector('link[rel="apple-touch-icon"]')?.setAttribute('href', '/icon-alert-192.png');
+        } else if (p.indexOf('/pro') === 0) {
+          link.href = '/manifest-pro.json';
+          meta.content = '#0891b2';
+          title.textContent = 'GERMS Pro';
+          appleMeta.content = 'GERMS Pro';
+          document.querySelector('link[rel="apple-touch-icon"]')?.setAttribute('href', '/icon-pro-192.png');
+        } else {
+          link.href = '/manifest.json';
+          meta.content = '#dc2626';
+          title.textContent = 'GERMS Dashboard';
+          appleMeta.content = 'GERMS';
+        }
+
+        document.head.appendChild(link);
+        if (!document.querySelector('meta[name="theme-color"]')) document.head.appendChild(meta);
+        document.head.appendChild(appleMeta);
+      })();
+    </script>
+    <meta name="theme-color" content="#dc2626" />
+    <link rel="apple-touch-icon" href="/icon-192.svg" />
+    <title>GERMS</title>
   </head>
   <body>
     <div id="root"></div>

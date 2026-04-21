@@ -1,0 +1,26 @@
+{
+  "name": "GERMS Alert - Signalement Citoyen",
+  "short_name": "GERMS Alert",
+  "description": "Application citoyenne de signalement d'urgences - Global Emergency Response Management System",
+  "start_url": "/citizen",
+  "scope": "/citizen",
+  "display": "standalone",
+  "background_color": "#FFFBF5",
+  "theme_color": "#b45309",
+  "orientation": "portrait",
+  "categories": ["utilities", "safety"],
+  "lang": "fr",
+  "icons": [
+    { "src": "/icon-alert-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-alert-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Signaler une urgence",
+      "short_name": "Signaler",
+      "url": "/citizen",
+      "icons": [{ "src": "/icon-alert-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
