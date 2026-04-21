@@ -25,6 +25,7 @@ export interface ProTeam {
   code: string;
   chef: string;
   chef_grade: string;
+  pays: string;
   membres: { nom: string; prenoms: string; grade: string; role: string }[];
 }
 
@@ -36,6 +37,7 @@ export const myTeam: ProTeam = {
   code: 'EQ-ALPHA',
   chef: 'Kouame Yao',
   chef_grade: 'Lieutenant',
+  pays: 'CI',
   membres: [
     { nom: 'Kouame', prenoms: 'Yao', grade: 'Lieutenant', role: "Chef d'equipe" },
     { nom: 'Toure', prenoms: 'Abdoulaye', grade: 'Sergent', role: 'Conducteur' },

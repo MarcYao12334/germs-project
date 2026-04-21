@@ -27,6 +27,11 @@ export default function ProApp() {
   useEffect(() => {
     const unsubs = [
       proSync.on('intervention:created', (p: any) => {
+        // Filter by country — only accept missions from the same country
+        if (p.pays && team && p.pays !== team.pays) {
+          console.log('[Pro] Mission ignored — different country:', p.pays, 'vs', team?.pays);
+          return;
+        }
         // Only accept missions targeted to this team (or no target = broadcast)
         if (p.targetTeamCode && team && p.targetTeamCode !== team.code) {
           console.log('[Pro] Mission ignored — targeted to', p.targetTeamCode, 'not', team?.code);
@@ -194,7 +199,7 @@ export default function ProApp() {
             <button onClick={() => setScreen('missions')} className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold">Retour aux missions</button>
           </div>
         )}
-        {screen === 'carte' && <MapScreen target={mapTarget} missions={missions} onViewDetails={handleViewDetails} onArrived={handleArrived} />}
+        {screen === 'carte' && <MapScreen target={mapTarget} missions={missions} onViewDetails={handleViewDetails} onArrived={handleArrived} defaultCountry={team.pays} />}
         {screen === 'alertes' && <AlertsList missions={missions} onViewDetails={handleViewDetails} />}
         {screen === 'equipe' && <TeamView team={team} onTeamUpdate={handleTeamUpdate} onLogout={handleLogout} />}
       </div>

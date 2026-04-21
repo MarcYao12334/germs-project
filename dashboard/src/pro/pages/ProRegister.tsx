@@ -7,11 +7,23 @@ const grades = ['Commandant', 'Capitaine', 'Lieutenant', 'Sergent-Chef', 'Sergen
 const roles = ["Chef d'equipe", 'Conducteur', 'Equipier', 'Secouriste', 'Infirmier', 'Plongeur', 'Specialiste'];
 const unites = ['GSPM Plateau', 'GSPM Cocody', 'GSPM Abobo', 'GSPM Yopougon', 'GSPM Marcory', 'GSPM Treichville', 'GSPM Port-Bouet', 'GSPM Adjame', 'GSPM Koumassi', 'GSPM Attiecoube'];
 const vehiculeTypes = ['Camion citerne', 'Ambulance', 'Echelle pivotante', 'Vehicule de secours routier', 'Fourgon pompe-tonne', 'Vehicule de commandement'];
+const countries = [
+  { code: 'CI', flag: '🇨🇮', dial: '+225', label: "Cote d'Ivoire" },
+  { code: 'FR', flag: '🇫🇷', dial: '+33', label: 'France' },
+  { code: 'SN', flag: '🇸🇳', dial: '+221', label: 'Senegal' },
+  { code: 'CM', flag: '🇨🇲', dial: '+237', label: 'Cameroun' },
+  { code: 'MA', flag: '🇲🇦', dial: '+212', label: 'Maroc' },
+  { code: 'US', flag: '🇺🇸', dial: '+1', label: 'USA' },
+  { code: 'GB', flag: '🇬🇧', dial: '+44', label: 'UK' },
+];
 
 interface Props { onDone: (team: ProTeam) => void; }
 
 export default function ProRegister({ onDone }: Props) {
   const [step, setStep] = useState<'team' | 'members' | 'otp'>('team');
+
+  // Country
+  const [pays, setPays] = useState('CI');
 
   // Team info
   const [nomEquipe, setNomEquipe] = useState('');
@@ -74,11 +86,12 @@ export default function ProRegister({ onDone }: Props) {
       chef: `${chefPrenoms} ${chefNom}`,
       chef_grade: chefGrade,
       membres,
+      pays,
     };
     proStorage.saveTeam(team);
     proStorage.setLoggedIn();
     // Notify Dashboard
-    proSync.send('team:registered', { ...team, type_vehicule: typeVehicule, immatriculation, telephone });
+    proSync.send('team:registered', { ...team, type_vehicule: typeVehicule, immatriculation, telephone, pays });
     onDone(team);
   };
 
@@ -93,6 +106,15 @@ export default function ProRegister({ onDone }: Props) {
         </div>
 
         <form onSubmit={handleTeamSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-gray-500 mb-1">Pays *</label>
+            <select value={pays} onChange={e => setPays(e.target.value)} className="input-field">
+              {countries.map(c => (
+                <option key={c.code} value={c.code}>{c.flag} {c.label} ({c.dial})</option>
+              ))}
+            </select>
+          </div>
+
           <div>
             <label className="block text-xs font-bold text-gray-500 mb-1">Nom de l'equipe *</label>
             <input className="input-field" value={nomEquipe} onChange={e => setNomEquipe(e.target.value)} placeholder="Equipe Alpha" required />
@@ -125,7 +147,9 @@ export default function ProRegister({ onDone }: Props) {
           <div>
             <label className="block text-xs font-bold text-gray-500 mb-1">Telephone equipe *</label>
             <div className="flex gap-2">
-              <div className="input-field w-20 flex items-center justify-center text-sm bg-gray-50 shrink-0 font-semibold">🇨🇮 +225</div>
+              <div className="input-field w-24 flex items-center justify-center text-sm bg-gray-50 shrink-0 font-semibold">
+                {countries.find(c => c.code === pays)?.flag} {countries.find(c => c.code === pays)?.dial}
+              </div>
               <input type="tel" className="input-field flex-1" value={telephone} onChange={e => setTelephone(e.target.value)} placeholder="27 20 21 22 23" required />
             </div>
           </div>

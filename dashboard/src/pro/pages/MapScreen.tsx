@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { MapContainer, TileLayer, CircleMarker, Popup, Polyline, useMap, Tooltip, Circle } from 'react-leaflet';
 import { Mission } from '../lib/data';
+import { getCountryCenter } from '../../lib/countries';
 import 'leaflet/dist/leaflet.css';
 
 interface MapTarget { lat: number; lng: number; label: string; missionId: string; }
@@ -11,6 +12,7 @@ interface Props {
   missions: Mission[];
   onViewDetails: (id: string) => void;
   onArrived?: (missionId: string) => void;
+  defaultCountry?: string;
 }
 
 const incidentIcons: Record<string, string> = {
@@ -85,7 +87,7 @@ function RecenterOnUser({ userPos, follow }: { userPos: [number, number] | null;
   return null;
 }
 
-export default function MapScreen({ target, missions, onViewDetails, onArrived }: Props) {
+export default function MapScreen({ target, missions, onViewDetails, onArrived, defaultCountry }: Props) {
   const [userPos, setUserPos] = useState<[number, number] | null>(null);
   const [route, setRoute] = useState<RouteInfo | null>(null);
   const [loadingRoute, setLoadingRoute] = useState(false);
@@ -95,7 +97,8 @@ export default function MapScreen({ target, missions, onViewDetails, onArrived }
   const watchIdRef = useRef<number | null>(null);
   const arrivedRef = useRef(false);
 
-  const center: [number, number] = target ? [target.lat, target.lng] : [5.3400, -4.0100];
+  const cc = getCountryCenter(defaultCountry || 'CI');
+  const center: [number, number] = target ? [target.lat, target.lng] : [cc.lat, cc.lng];
   const activeMissions = missions.filter(m => m.statut !== 'TERMINE');
 
   // Start GPS tracking

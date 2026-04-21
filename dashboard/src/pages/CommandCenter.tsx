@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { MapContainer, TileLayer, CircleMarker, Circle, Popup, Polyline, Tooltip, useMap } from 'react-leaflet';
 import { mockStats, Alert, Intervention, Team } from '../data/mockData';
 import { dashboardSync } from '../lib/dashboardSync';
+import { getCountryCenter } from '../lib/countries';
 import 'leaflet/dist/leaflet.css';
 
 interface Props { user: any; onLogout: () => void; }
@@ -38,7 +39,7 @@ function TopBar({ user, onLogout }: { user: any; onLogout: () => void }) {
           </div>
           <span className="text-gray-300">{user.prenoms} {user.nom}</span>
           <span className="text-gray-600">|</span>
-          <span className="text-gray-500">CI-Abidjan</span>
+          <span className="text-gray-500">{user.pays || 'CI'}</span>
         </div>
         <button onClick={onLogout} className="text-gray-500 hover:text-red-400 transition-colors text-xs font-medium ml-1">
           <span className="hidden sm:inline">Deconnexion</span>
@@ -593,6 +594,8 @@ export default function CommandCenter({ user, onLogout }: Props) {
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [mapTarget, setMapTarget] = useState<{ lat: number; lng: number } | null>(null);
 
+  const countryCenter = getCountryCenter(user.pays || 'CI');
+
   const handleIntvClick = useCallback((intv: Intervention) => {
     setSelectedIntvId(prev => prev === intv.id ? null : intv.id);
     setSelectedAlertId(null); setSelectedTeamId(null);
@@ -627,6 +630,11 @@ export default function CommandCenter({ user, onLogout }: Props) {
     console.log('[Dashboard] Listening for sync events...');
     const unsub1 = dashboardSync.on('alert:new', (incoming: Alert) => {
       console.log('[Dashboard] Received alert:new!', incoming.code);
+      // Filter by country
+      if (incoming.pays && incoming.pays !== user.pays) {
+        console.log('[Dashboard] Alert ignored — different country:', incoming.pays);
+        return;
+      }
       setAlerts(prev => {
         if (prev.some(a => a.id === incoming.id)) return prev;
         return [incoming, ...prev];
@@ -651,12 +659,16 @@ export default function CommandCenter({ user, onLogout }: Props) {
     // Listen for Pro team registration
     const unsub4 = dashboardSync.on('team:registered', (teamData: any) => {
       console.log('[Dashboard] New team registered:', teamData.nom);
+      if (teamData.pays && teamData.pays !== user.pays) {
+        console.log('[Dashboard] Team ignored — different country:', teamData.pays);
+        return;
+      }
       const newTeam: Team = {
         id: teamData.code || `team-${Date.now()}`, nom: teamData.nom, unite: teamData.unite,
         type_vehicule: teamData.type_vehicule || 'Camion', immatriculation: teamData.immatriculation || '',
         telephone: teamData.telephone || '', code_equipe: teamData.code,
         pays: 'CI', note_moyenne: 0, actif: true,
-        lat: 5.34 + (Math.random() - 0.5) * 0.02, lng: -4.01 + (Math.random() - 0.5) * 0.02,
+        lat: countryCenter.lat + (Math.random() - 0.5) * 0.02, lng: countryCenter.lng + (Math.random() - 0.5) * 0.02,
         statut: 'DISPONIBLE' as const,
         membres: teamData.membres || [],
       };
@@ -729,6 +741,7 @@ export default function CommandCenter({ user, onLogout }: Props) {
       dashboardSync.send('intervention:created', {
         ...newIntv,
         targetTeamCode: closestTeam.code_equipe,
+        pays: alert?.pays || user.pays,
         description: alert?.description || '',
         citoyen_nom: alert?.citoyen_nom ? `${alert.citoyen_prenoms} ${alert.citoyen_nom}` : undefined,
         citoyen_telephone: alert?.citoyen_telephone,
@@ -763,7 +776,7 @@ export default function CommandCenter({ user, onLogout }: Props) {
         {/* ── MAP ── */}
         <div className="relative m-2 md:m-3 lg:mr-1.5 rounded-2xl overflow-hidden shadow-lg shadow-gray-900/5 border border-gray-200/50 h-[40vh] lg:h-auto lg:flex-1">
           <MapLegend />
-          <MapContainer center={[5.3400, -4.0100]} zoom={13} style={{ height: '100%', width: '100%' }} zoomControl={false}>
+          <MapContainer center={[countryCenter.lat, countryCenter.lng]} zoom={countryCenter.zoom} style={{ height: '100%', width: '100%' }} zoomControl={false}>
             <MapController target={mapTarget} />
             <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" attribution="CARTO" />
 
