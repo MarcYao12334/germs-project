@@ -75,12 +75,32 @@ export default function Login({ onLogin }: LoginProps) {
   const [regOtp, setRegOtp] = useState('');
   const [generatedOtp, setGeneratedOtp] = useState('');
   const [loginOtp, setLoginOtp] = useState('');
+  const [regErrors, setRegErrors] = useState<Record<string, string>>({});
 
   const generateOtp = () => String(Math.floor(100000 + Math.random() * 900000));
 
+  const validateRegister = (): Record<string, string> => {
+    const errs: Record<string, string> = {};
+    if (!regNom.trim()) errs.nom = 'Le nom est obligatoire';
+    else if (regNom.trim().length < 2) errs.nom = 'Min 2 caracteres';
+    if (!regPrenoms.trim()) errs.prenoms = 'Le(s) prenom(s) est obligatoire';
+    else if (regPrenoms.trim().length < 2) errs.prenoms = 'Min 2 caracteres';
+    if (!regTelephone.trim()) errs.telephone = 'Le telephone est obligatoire';
+    else if (regTelephone.replace(/\s/g, '').length < 8) errs.telephone = 'Min 8 chiffres';
+    if (!regEmail.trim()) errs.email = "L'email est obligatoire";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(regEmail)) errs.email = 'Email invalide';
+    if (!regPassword) errs.password = 'Mot de passe obligatoire';
+    else if (regPassword.length < 6) errs.password = 'Min 6 caracteres';
+    if (!regConfirm) errs.confirm = 'Confirmation obligatoire';
+    else if (regPassword !== regConfirm) errs.confirm = 'Ne correspond pas';
+    return errs;
+  };
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!telephone || !password) { window.alert('Veuillez remplir tous les champs'); return; }
+    if (!telephone.trim()) { window.alert('Veuillez saisir votre numero de telephone'); return; }
+    if (!password) { window.alert('Veuillez saisir votre mot de passe'); return; }
+    if (telephone.replace(/\s/g, '').length < 8) { window.alert('Numero de telephone invalide'); return; }
     setLoading(true);
     const code = generateOtp();
     setLoginOtp(code);
@@ -107,8 +127,9 @@ export default function Login({ onLogin }: LoginProps) {
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!regEmail) { window.alert('L\'email est obligatoire'); return; }
-    if (regPassword !== regConfirm) { window.alert('Les mots de passe ne correspondent pas'); return; }
+    const errs = validateRegister();
+    setRegErrors(errs);
+    if (Object.keys(errs).length > 0) return;
     setLoading(true);
     const code = generateOtp();
     setGeneratedOtp(code);
@@ -253,11 +274,13 @@ export default function Login({ onLogin }: LoginProps) {
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">Nom <span className="text-red-400">*</span></label>
-                  <input type="text" className="input-field" value={regNom} onChange={e => setRegNom(e.target.value)} placeholder="Konan" required />
+                  <input type="text" className={`input-field ${regErrors.nom ? '!border-red-400' : ''}`} value={regNom} onChange={e => { setRegNom(e.target.value); setRegErrors(prev => { const n = {...prev}; delete n.nom; return n; }); }} placeholder="Konan" />
+                  {regErrors.nom && <p className="text-[10px] text-red-500 mt-0.5">{regErrors.nom}</p>}
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">Prenoms <span className="text-red-400">*</span></label>
-                  <input type="text" className="input-field" value={regPrenoms} onChange={e => setRegPrenoms(e.target.value)} placeholder="Yao Aristide" required />
+                  <input type="text" className={`input-field ${regErrors.prenoms ? '!border-red-400' : ''}`} value={regPrenoms} onChange={e => { setRegPrenoms(e.target.value); setRegErrors(prev => { const n = {...prev}; delete n.prenoms; return n; }); }} placeholder="Yao Aristide" />
+                  {regErrors.prenoms && <p className="text-[10px] text-red-500 mt-0.5">{regErrors.prenoms}</p>}
                 </div>
               </div>
 
@@ -268,28 +291,29 @@ export default function Login({ onLogin }: LoginProps) {
                   <div className="input-field w-20 flex items-center justify-center text-sm text-gray-500 bg-gray-50">
                     {regSelectedCountry.flag} {regSelectedCountry.dial}
                   </div>
-                  <input type="tel" className="input-field flex-1" value={regTelephone} onChange={e => setRegTelephone(e.target.value)} placeholder="6 12 34 56 78" required />
+                  <input type="tel" className={`input-field flex-1 ${regErrors.telephone ? '!border-red-400' : ''}`} value={regTelephone} onChange={e => { setRegTelephone(e.target.value); setRegErrors(prev => { const n = {...prev}; delete n.telephone; return n; }); }} placeholder="6 12 34 56 78" />
                 </div>
+                {regErrors.telephone && <p className="text-[10px] text-red-500 mt-0.5">{regErrors.telephone}</p>}
               </div>
 
               {/* Email */}
               <div className="mb-4">
                 <label className="block text-xs font-medium text-gray-500 mb-1">Email <span className="text-red-400">*</span></label>
-                <input type="email" className="input-field" value={regEmail} onChange={e => setRegEmail(e.target.value)} placeholder="operateur@germs.app" required />
+                <input type="email" className={`input-field ${regErrors.email ? '!border-red-400' : ''}`} value={regEmail} onChange={e => { setRegEmail(e.target.value); setRegErrors(prev => { const n = {...prev}; delete n.email; return n; }); }} placeholder="operateur@germs.app" />
+                {regErrors.email && <p className="text-[10px] text-red-500 mt-0.5">{regErrors.email}</p>}
               </div>
 
               {/* Password */}
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">Mot de passe <span className="text-red-400">*</span></label>
-                  <input type="password" className="input-field" value={regPassword} onChange={e => setRegPassword(e.target.value)} placeholder="••••••••" required minLength={6} />
+                  <input type="password" className={`input-field ${regErrors.password ? '!border-red-400' : ''}`} value={regPassword} onChange={e => { setRegPassword(e.target.value); setRegErrors(prev => { const n = {...prev}; delete n.password; return n; }); }} placeholder="••••••••" />
+                  {regErrors.password && <p className="text-[10px] text-red-500 mt-0.5">{regErrors.password}</p>}
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">Confirmer <span className="text-red-400">*</span></label>
-                  <input type="password" className="input-field" value={regConfirm} onChange={e => setRegConfirm(e.target.value)} placeholder="••••••••" required />
-                  {regConfirm && regPassword !== regConfirm && (
-                    <p className="text-[10px] text-red-500 mt-0.5">Ne correspond pas</p>
-                  )}
+                  <input type="password" className={`input-field ${regErrors.confirm ? '!border-red-400' : ''}`} value={regConfirm} onChange={e => { setRegConfirm(e.target.value); setRegErrors(prev => { const n = {...prev}; delete n.confirm; return n; }); }} placeholder="••••••••" />
+                  {regErrors.confirm && <p className="text-[10px] text-red-500 mt-0.5">{regErrors.confirm}</p>}
                 </div>
               </div>
 

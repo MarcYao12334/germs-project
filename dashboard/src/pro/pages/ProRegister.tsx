@@ -71,9 +71,26 @@ export default function ProRegister({ onDone }: Props) {
   const [email, setEmail] = useState('');
   const generateOtp = () => String(Math.floor(100000 + Math.random() * 900000));
 
+  const [teamErrors, setTeamErrors] = useState<Record<string, string>>({});
+
+  const validateTeam = (): Record<string, string> => {
+    const errs: Record<string, string> = {};
+    if (!nomEquipe.trim()) errs.nomEquipe = "Le nom de l'equipe est obligatoire";
+    else if (nomEquipe.trim().length < 3) errs.nomEquipe = 'Min 3 caracteres';
+    if (!email.trim()) errs.email = "L'email est obligatoire";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = 'Email invalide';
+    if (!telephone.trim()) errs.telephone = 'Le telephone est obligatoire';
+    else if (telephone.replace(/\s/g, '').length < 8) errs.telephone = 'Min 8 chiffres';
+    if (!chefNom.trim()) errs.chefNom = 'Le nom du chef est obligatoire';
+    if (!chefPrenoms.trim()) errs.chefPrenoms = 'Le prenom du chef est obligatoire';
+    return errs;
+  };
+
   const handleTeamSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Add chef as first member
+    const errs = validateTeam();
+    setTeamErrors(errs);
+    if (Object.keys(errs).length > 0) return;
     setMembres([{ nom: chefNom, prenoms: chefPrenoms, grade: chefGrade, role: "Chef d'equipe" }]);
     setStep('members');
   };
@@ -138,7 +155,8 @@ export default function ProRegister({ onDone }: Props) {
 
           <div>
             <label className="block text-xs font-bold text-gray-500 mb-1">Nom de l'equipe *</label>
-            <input className="input-field" value={nomEquipe} onChange={e => setNomEquipe(e.target.value)} placeholder="Equipe Alpha" required />
+            <input className={`input-field ${teamErrors.nomEquipe ? '!border-red-400' : ''}`} value={nomEquipe} onChange={e => { setNomEquipe(e.target.value); setTeamErrors(prev => { const n = {...prev}; delete n.nomEquipe; return n; }); }} placeholder="Equipe Alpha" required />
+            {teamErrors.nomEquipe && <p className="text-[10px] text-red-500 mt-0.5">{teamErrors.nomEquipe}</p>}
           </div>
 
           <div>
@@ -163,7 +181,8 @@ export default function ProRegister({ onDone }: Props) {
 
           <div>
             <label className="block text-xs font-bold text-gray-500 mb-1">Email equipe *</label>
-            <input type="email" className="input-field" value={email} onChange={e => setEmail(e.target.value)} placeholder="equipe@gspm.ci" required />
+            <input type="email" className={`input-field ${teamErrors.email ? '!border-red-400' : ''}`} value={email} onChange={e => { setEmail(e.target.value); setTeamErrors(prev => { const n = {...prev}; delete n.email; return n; }); }} placeholder="equipe@gspm.ci" required />
+            {teamErrors.email && <p className="text-[10px] text-red-500 mt-0.5">{teamErrors.email}</p>}
           </div>
           <div>
             <label className="block text-xs font-bold text-gray-500 mb-1">Telephone equipe *</label>
@@ -171,8 +190,9 @@ export default function ProRegister({ onDone }: Props) {
               <div className="input-field w-24 flex items-center justify-center text-sm bg-gray-50 shrink-0 font-semibold">
                 {countries.find(c => c.code === pays)?.flag} {countries.find(c => c.code === pays)?.dial}
               </div>
-              <input type="tel" className="input-field flex-1" value={telephone} onChange={e => setTelephone(e.target.value)} placeholder="27 20 21 22 23" required />
+              <input type="tel" className={`input-field flex-1 ${teamErrors.telephone ? '!border-red-400' : ''}`} value={telephone} onChange={e => { setTelephone(e.target.value); setTeamErrors(prev => { const n = {...prev}; delete n.telephone; return n; }); }} placeholder="27 20 21 22 23" required />
             </div>
+            {teamErrors.telephone && <p className="text-[10px] text-red-500 mt-0.5">{teamErrors.telephone}</p>}
           </div>
 
           <div className="border-t border-gray-200 pt-4 mt-2">
@@ -180,11 +200,13 @@ export default function ProRegister({ onDone }: Props) {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold text-gray-500 mb-1">Nom *</label>
-                <input className="input-field" value={chefNom} onChange={e => setChefNom(e.target.value)} placeholder="Kouame" required />
+                <input className={`input-field ${teamErrors.chefNom ? '!border-red-400' : ''}`} value={chefNom} onChange={e => { setChefNom(e.target.value); setTeamErrors(prev => { const n = {...prev}; delete n.chefNom; return n; }); }} placeholder="Kouame" required />
+                {teamErrors.chefNom && <p className="text-[10px] text-red-500 mt-0.5">{teamErrors.chefNom}</p>}
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-500 mb-1">Prenoms *</label>
-                <input className="input-field" value={chefPrenoms} onChange={e => setChefPrenoms(e.target.value)} placeholder="Yao" required />
+                <input className={`input-field ${teamErrors.chefPrenoms ? '!border-red-400' : ''}`} value={chefPrenoms} onChange={e => { setChefPrenoms(e.target.value); setTeamErrors(prev => { const n = {...prev}; delete n.chefPrenoms; return n; }); }} placeholder="Yao" required />
+                {teamErrors.chefPrenoms && <p className="text-[10px] text-red-500 mt-0.5">{teamErrors.chefPrenoms}</p>}
               </div>
             </div>
             <div className="mt-3">

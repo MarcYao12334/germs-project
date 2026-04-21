@@ -47,14 +47,34 @@ export default function Register({ onDone, initialCountry = 'CI' }: Props) {
   const [otp, setOtp] = useState('');
   const [accepted, setAccepted] = useState(false);
   const [generatedOtp, setGeneratedOtp] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const generateOtp = () => String(Math.floor(100000 + Math.random() * 900000));
 
   const country = countriesData.find(c => c.code === pays) || countriesData[0];
 
+  const validate = (): Record<string, string> => {
+    const errs: Record<string, string> = {};
+    if (!nom.trim()) errs.nom = 'Le nom est obligatoire';
+    else if (nom.trim().length < 2) errs.nom = 'Le nom doit contenir au moins 2 caracteres';
+    if (!prenoms.trim()) errs.prenoms = 'Le(s) prenom(s) est obligatoire';
+    else if (prenoms.trim().length < 2) errs.prenoms = 'Le prenom doit contenir au moins 2 caracteres';
+    if (!telephone.trim()) errs.telephone = 'Le telephone est obligatoire';
+    else if (telephone.replace(/\s/g, '').length < 8) errs.telephone = 'Numero de telephone invalide (min 8 chiffres)';
+    if (!email.trim()) errs.email = "L'email est obligatoire";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = 'Adresse email invalide';
+    if (!password) errs.password = 'Le mot de passe est obligatoire';
+    else if (password.length < 6) errs.password = 'Le mot de passe doit contenir au moins 6 caracteres';
+    if (!confirm) errs.confirm = 'Veuillez confirmer le mot de passe';
+    else if (password !== confirm) errs.confirm = 'Les mots de passe ne correspondent pas';
+    if (!accepted) errs.accepted = 'Vous devez accepter les conditions';
+    return errs;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) { window.alert('L\'email est obligatoire'); return; }
-    if (password !== confirm) { window.alert('Les mots de passe ne correspondent pas'); return; }
+    const errs = validate();
+    setErrors(errs);
+    if (Object.keys(errs).length > 0) return;
     const code = generateOtp();
     setGeneratedOtp(code);
     setStep('otp');
@@ -119,11 +139,13 @@ export default function Register({ onDone, initialCountry = 'CI' }: Props) {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-semibold text-gray-500 mb-1">Nom *</label>
-            <input className="input-field" value={nom} onChange={e => setNom(e.target.value)} placeholder="Konan" required />
+            <input className={`input-field ${errors.nom ? '!border-red-400 !bg-red-50/30' : ''}`} value={nom} onChange={e => { setNom(e.target.value); setErrors(prev => { const n = {...prev}; delete n.nom; return n; }); }} placeholder="Konan" required />
+            {errors.nom && <p className="text-[11px] text-red-500 mt-1">{errors.nom}</p>}
           </div>
           <div>
             <label className="block text-xs font-semibold text-gray-500 mb-1">Prenoms *</label>
-            <input className="input-field" value={prenoms} onChange={e => setPrenoms(e.target.value)} placeholder="Yao Aristide" required />
+            <input className={`input-field ${errors.prenoms ? '!border-red-400 !bg-red-50/30' : ''}`} value={prenoms} onChange={e => { setPrenoms(e.target.value); setErrors(prev => { const n = {...prev}; delete n.prenoms; return n; }); }} placeholder="Yao Aristide" required />
+            {errors.prenoms && <p className="text-[11px] text-red-500 mt-1">{errors.prenoms}</p>}
           </div>
         </div>
 
@@ -139,31 +161,37 @@ export default function Register({ onDone, initialCountry = 'CI' }: Props) {
               </select>
               <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-[10px]">▼</div>
             </div>
-            <input type="tel" className="input-field flex-1" value={telephone} onChange={e => setTelephone(e.target.value)} placeholder={country.placeholder} required />
+            <input type="tel" className={`input-field flex-1 ${errors.telephone ? '!border-red-400 !bg-red-50/30' : ''}`} value={telephone} onChange={e => { setTelephone(e.target.value); setErrors(prev => { const n = {...prev}; delete n.telephone; return n; }); }} placeholder={country.placeholder} required />
           </div>
+          {errors.telephone && <p className="text-[11px] text-red-500 mt-1">{errors.telephone}</p>}
         </div>
 
         <div>
           <label className="block text-xs font-semibold text-gray-500 mb-1">Email <span className="text-red-400">*</span></label>
-          <input type="email" className="input-field" value={email} onChange={e => setEmail(e.target.value)} placeholder="konan@email.com" required />
+          <input type="email" className={`input-field ${errors.email ? '!border-red-400 !bg-red-50/30' : ''}`} value={email} onChange={e => { setEmail(e.target.value); setErrors(prev => { const n = {...prev}; delete n.email; return n; }); }} placeholder="konan@email.com" required />
+          {errors.email && <p className="text-[11px] text-red-500 mt-1">{errors.email}</p>}
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-semibold text-gray-500 mb-1">Mot de passe *</label>
-            <input type="password" className="input-field" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
+            <input type="password" className={`input-field ${errors.password ? '!border-red-400 !bg-red-50/30' : ''}`} value={password} onChange={e => { setPassword(e.target.value); setErrors(prev => { const n = {...prev}; delete n.password; return n; }); }} required minLength={6} />
+            {errors.password && <p className="text-[11px] text-red-500 mt-1">{errors.password}</p>}
           </div>
           <div>
             <label className="block text-xs font-semibold text-gray-500 mb-1">Confirmer *</label>
-            <input type="password" className="input-field" value={confirm} onChange={e => setConfirm(e.target.value)} required />
-            {confirm && password !== confirm && <p className="text-[10px] text-red-500 mt-0.5">Ne correspond pas</p>}
+            <input type="password" className={`input-field ${errors.confirm ? '!border-red-400 !bg-red-50/30' : ''}`} value={confirm} onChange={e => { setConfirm(e.target.value); setErrors(prev => { const n = {...prev}; delete n.confirm; return n; }); }} required />
+            {errors.confirm && <p className="text-[11px] text-red-500 mt-1">{errors.confirm}</p>}
           </div>
         </div>
 
-        <label className="flex items-start gap-2.5 pt-2 cursor-pointer">
-          <input type="checkbox" checked={accepted} onChange={e => setAccepted(e.target.checked)} className="mt-0.5 rounded border-gray-300 text-red-600" required />
-          <span className="text-xs text-gray-500">J'accepte les <span className="text-red-600 font-medium">conditions d'utilisation</span></span>
-        </label>
+        <div>
+          <label className="flex items-start gap-2.5 pt-2 cursor-pointer">
+            <input type="checkbox" checked={accepted} onChange={e => setAccepted(e.target.checked)} className="mt-0.5 rounded border-gray-300 text-red-600" required />
+            <span className="text-xs text-gray-500">J'accepte les <span className="text-red-600 font-medium">conditions d'utilisation</span></span>
+          </label>
+          {errors.accepted && <p className="text-[11px] text-red-500 mt-1">{errors.accepted}</p>}
+        </div>
 
         <button type="submit" className="btn-primary mt-2">Creer mon compte</button>
       </form>
