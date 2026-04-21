@@ -5,7 +5,7 @@ import { proSync } from '../lib/sync';
 
 const grades = ['Commandant', 'Capitaine', 'Lieutenant', 'Sergent-Chef', 'Sergent', 'Caporal-Chef', 'Caporal', 'Sapeur 1C', 'Sapeur'];
 const roles = ["Chef d'equipe", 'Conducteur', 'Equipier', 'Secouriste', 'Infirmier', 'Plongeur', 'Specialiste'];
-const unites = ['GSPM Plateau', 'GSPM Cocody', 'GSPM Abobo', 'GSPM Yopougon', 'GSPM Marcory', 'GSPM Treichville', 'GSPM Port-Bouet', 'GSPM Adjame', 'GSPM Koumassi', 'GSPM Attiecoube'];
+const unites = ['GSPM Plateau', 'GSPM Cocody', 'GSPM Abobo', 'GSPM Yopougon', 'GSPM Marcory', 'GSPM Treichville', 'GSPM Port-Bouet', 'GSPM Adjame', 'GSPM Koumassi', 'GSPM Attiecoube', 'GSPM Bingerville'];
 const vehiculeTypes = ['Camion citerne', 'Ambulance', 'Echelle pivotante', 'Vehicule de secours routier', 'Fourgon pompe-tonne', 'Vehicule de commandement'];
 const countries = [
   { code: 'CI', flag: '🇨🇮', dial: '+225', label: "Cote d'Ivoire" },
