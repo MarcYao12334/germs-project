@@ -127,6 +127,12 @@ export default function MapScreen({ target, missions, onViewDetails, onArrived, 
   const lastSyncRef = useRef(0);
   const routeStartTimeRef = useRef(0);
   const routeStartDurationRef = useRef(0);
+  const onArrivedRef = useRef(onArrived);
+  const onEtaUpdateRef = useRef(onEtaUpdate);
+
+  // Keep callback refs fresh without restarting effects
+  useEffect(() => { onArrivedRef.current = onArrived; }, [onArrived]);
+  useEffect(() => { onEtaUpdateRef.current = onEtaUpdate; }, [onEtaUpdate]);
 
   const cc = getCountryCenter(defaultCountry || 'CI');
   const center: [number, number] = target ? [target.lat, target.lng] : [cc.lat, cc.lng];
@@ -155,7 +161,7 @@ export default function MapScreen({ target, missions, onViewDetails, onArrived, 
             arrivedRef.current = true;
             setArrived(true);
             setLiveEtaSec(0);
-            if (onArrived) onArrived(target.missionId);
+            if (onArrivedRef.current) onArrivedRef.current(target.missionId);
           }
         }
       },
@@ -164,7 +170,7 @@ export default function MapScreen({ target, missions, onViewDetails, onArrived, 
     );
 
     return () => { if (watchIdRef.current !== null) navigator.geolocation.clearWatch(watchIdRef.current); };
-  }, [target, onArrived]);
+  }, [target?.missionId]);
 
   // Route calculation — periodic recalculation
   useEffect(() => {
@@ -184,9 +190,9 @@ export default function MapScreen({ target, missions, onViewDetails, onArrived, 
         setLoadingRoute(false);
 
         // Sync to citizen
-        if (onEtaUpdate && now - lastSyncRef.current >= ETA_SYNC_INTERVAL) {
+        if (onEtaUpdateRef.current && now - lastSyncRef.current >= ETA_SYNC_INTERVAL) {
           lastSyncRef.current = now;
-          onEtaUpdate(target.missionId, r.distance_km, r.duration_min);
+          onEtaUpdateRef.current(target.missionId, r.distance_km, r.duration_min);
         }
       }
     });

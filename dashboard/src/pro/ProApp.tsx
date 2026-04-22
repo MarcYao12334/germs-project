@@ -142,13 +142,14 @@ export default function ProApp() {
 
   // Auto-arrival: when team reaches the incident location, auto-set SUR_PLACE
   const handleArrived = useCallback((missionId: string) => {
-    const mission = missions.find(m => m.id === missionId);
-    if (mission && (mission.statut === 'EN_ROUTE' || mission.statut === 'NOUVEAU')) {
+    setMissions(prev => {
+      const mission = prev.find(m => m.id === missionId);
+      if (!mission || (mission.statut !== 'EN_ROUTE' && mission.statut !== 'NOUVEAU')) return prev;
       console.log('[Pro] Auto-arrival detected for', missionId);
-      setMissions(prev => prev.map(m => m.id === missionId ? { ...m, statut: 'SUR_PLACE' as const } : m));
       proSync.send('intervention:status-changed', { interventionId: missionId, statut: 'SUR_PLACE' });
-    }
-  }, [missions]);
+      return prev.map(m => m.id === missionId ? { ...m, statut: 'SUR_PLACE' as const } : m);
+    });
+  }, []);
 
   const handleEtaUpdate = useCallback((missionId: string, distance_km: number, eta_minutes: number) => {
     proSync.send('eta:updated', { missionId, distance_km, eta_minutes });

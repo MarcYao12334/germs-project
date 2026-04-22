@@ -721,11 +721,11 @@ export default function CommandCenter({ user, onLogout }: Props) {
       }
       setAlerts(prev => {
         if (prev.some(a => a.id === incoming.id)) return prev;
+        // Only play alarm and update stats for genuinely new alerts
+        alertSound.play();
+        setStats(s => ({ ...s, alertes_en_attente: s.alertes_en_attente + 1 }));
         return [incoming, ...prev];
       });
-      setStats(s => ({ ...s, alertes_en_attente: s.alertes_en_attente + 1 }));
-      // Declencher l'alarme sonore
-      alertSound.play();
     });
 
     // Listen for Pro firefighter status changes → update interventions
@@ -768,6 +768,13 @@ export default function CommandCenter({ user, onLogout }: Props) {
   }, []);
 
   const pendingAlerts = alerts.filter(a => a.statut === 'PENDING');
+
+  // Auto-stop alarm when no more pending alerts
+  useEffect(() => {
+    if (pendingAlerts.length === 0 && alertSound.playing) {
+      alertSound.stop();
+    }
+  }, [pendingAlerts.length]);
 
   const handleValidate = useCallback((id: string) => {
     let foundAlert: any = null;
