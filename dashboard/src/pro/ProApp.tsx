@@ -134,6 +134,10 @@ export default function ProApp() {
     }
   }, [missions]);
 
+  const handleEtaUpdate = useCallback((missionId: string, distance_km: number, eta_minutes: number) => {
+    proSync.send('eta:updated', { missionId, distance_km, eta_minutes });
+  }, []);
+
   const handleNav = (tab: string) => {
     if (tab === 'missions' || tab === 'carte' || tab === 'alertes' || tab === 'equipe') {
       setScreen(tab as Screen);
@@ -204,7 +208,7 @@ export default function ProApp() {
             <button onClick={() => setScreen('missions')} className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold">Retour aux missions</button>
           </div>
         )}
-        {screen === 'carte' && <MapScreen target={mapTarget} missions={missions} onViewDetails={handleViewDetails} onArrived={handleArrived} defaultCountry={team.pays} />}
+        {screen === 'carte' && <MapScreen target={mapTarget} missions={missions} onViewDetails={handleViewDetails} onArrived={handleArrived} onEtaUpdate={handleEtaUpdate} defaultCountry={team.pays} />}
         {screen === 'alertes' && <AlertsList missions={missions} onViewDetails={handleViewDetails} />}
         {screen === 'equipe' && <TeamView team={team} onTeamUpdate={handleTeamUpdate} onLogout={handleLogout} />}
       </div>

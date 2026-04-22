@@ -12,6 +12,7 @@ interface Props {
   missions: Mission[];
   onViewDetails: (id: string) => void;
   onArrived?: (missionId: string) => void;
+  onEtaUpdate?: (missionId: string, distance_km: number, eta_minutes: number) => void;
   defaultCountry?: string;
 }
 
@@ -87,7 +88,7 @@ function RecenterOnUser({ userPos, follow }: { userPos: [number, number] | null;
   return null;
 }
 
-export default function MapScreen({ target, missions, onViewDetails, onArrived, defaultCountry }: Props) {
+export default function MapScreen({ target, missions, onViewDetails, onArrived, onEtaUpdate, defaultCountry }: Props) {
   const [userPos, setUserPos] = useState<[number, number] | null>(null);
   const [route, setRoute] = useState<RouteInfo | null>(null);
   const [loadingRoute, setLoadingRoute] = useState(false);
@@ -150,6 +151,10 @@ export default function MapScreen({ target, missions, onViewDetails, onArrived, 
     fetchRoute(userPos[0], userPos[1], target.lat, target.lng).then(r => {
       setRoute(r);
       setLoadingRoute(false);
+      // Sync ETA to citizen app
+      if (r && target && onEtaUpdate) {
+        onEtaUpdate(target.missionId, r.distance_km, r.duration_min);
+      }
     });
   }, [userPos?.[0]?.toFixed(3), userPos?.[1]?.toFixed(3), target?.missionId, arrived]);
 
