@@ -5,7 +5,7 @@ import { getCountryCenter } from '../../lib/countries';
 import 'leaflet/dist/leaflet.css';
 
 interface MapTarget { lat: number; lng: number; label: string; missionId: string; }
-interface RouteInfo { distance_km: number; duration_min: number; coordinates: [number, number][]; }
+interface RouteInfo { distance_km: number; duration_min: number; duration_sec: number; coordinates: [number, number][]; }
 
 interface Props {
   target: MapTarget | null;
@@ -16,11 +16,6 @@ interface Props {
   defaultCountry?: string;
 }
 
-const incidentIcons: Record<string, string> = {
-  'Incendie': '🔥', 'Accident de route': '🚗', 'Fuite de gaz': '💧',
-  'Secours a personne': '🏥', 'Inondation': '🌊', 'Autre urgence': '⚡',
-};
-
 const statusColors: Record<string, { stroke: string; fill: string }> = {
   NOUVEAU: { stroke: '#3b82f6', fill: '#3b82f640' },
   EN_ROUTE: { stroke: '#a855f7', fill: '#a855f740' },
@@ -29,8 +24,9 @@ const statusColors: Record<string, { stroke: string; fill: string }> = {
 };
 
 const ARRIVAL_THRESHOLD_METERS = 150;
+const ROUTE_RECALC_INTERVAL = 8000; // Recalculate every 8 seconds
+const ETA_SYNC_INTERVAL = 5000; // Sync ETA to citizen every 5 seconds
 
-// Calculate distance between two coordinates in meters (Haversine)
 function distanceMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371000;
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -39,19 +35,29 @@ function distanceMeters(lat1: number, lng1: number, lat2: number, lng2: number):
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-// Fetch route from OSRM (free, no API key needed)
+// Find the closest point on the route to the user and return remaining route
+function getRemainingRoute(route: [number, number][], userPos: [number, number]): [number, number][] {
+  let minDist = Infinity;
+  let closestIdx = 0;
+  for (let i = 0; i < route.length; i++) {
+    const d = distanceMeters(userPos[0], userPos[1], route[i][0], route[i][1]);
+    if (d < minDist) { minDist = d; closestIdx = i; }
+  }
+  return [userPos, ...route.slice(closestIdx)];
+}
+
 async function fetchRoute(fromLat: number, fromLng: number, toLat: number, toLng: number): Promise<RouteInfo | null> {
   try {
-    const url = `https://router.project-osrm.org/route/v1/driving/${fromLng},${fromLat};${toLng},${toLat}?overview=full&geometries=geojson&alternatives=true`;
+    const url = `https://router.project-osrm.org/route/v1/driving/${fromLng},${fromLat};${toLng},${toLat}?overview=full&geometries=geojson&steps=true`;
     const res = await fetch(url);
     const data = await res.json();
     if (data.code !== 'Ok' || !data.routes?.length) return null;
-    // Pick the best route (first = fastest)
     const route = data.routes[0];
     const coords: [number, number][] = route.geometry.coordinates.map((c: number[]) => [c[1], c[0]]);
     return {
       distance_km: Math.round(route.distance / 100) / 10,
       duration_min: Math.round(route.duration / 60),
+      duration_sec: Math.round(route.duration),
       coordinates: coords,
     };
   } catch (err) {
@@ -60,57 +66,78 @@ async function fetchRoute(fromLat: number, fromLng: number, toLat: number, toLng
   }
 }
 
-// Component to fit map bounds to route
-function FitRoute({ route, userPos }: { route: RouteInfo | null; userPos: [number, number] | null }) {
+// Format seconds to "X min YY s" or "X h YY min"
+function formatDuration(totalSec: number): string {
+  if (totalSec < 60) return `${totalSec} s`;
+  const min = Math.floor(totalSec / 60);
+  const sec = totalSec % 60;
+  if (min < 60) return `${min} min ${sec.toString().padStart(2, '0')} s`;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return `${h} h ${m.toString().padStart(2, '0')} min`;
+}
+
+function formatDistance(meters: number): string {
+  if (meters < 1000) return `${meters} m`;
+  return `${(meters / 1000).toFixed(1)} km`;
+}
+
+// Auto-follow + zoom on user
+function FollowDriver({ userPos, active }: { userPos: [number, number] | null; active: boolean }) {
   const map = useMap();
-  const fitted = useRef(false);
   useEffect(() => {
-    if (route && route.coordinates.length > 1 && !fitted.current) {
+    if (userPos && active) {
+      map.setView(userPos, Math.max(map.getZoom(), 16), { animate: true, duration: 0.5 });
+    }
+  }, [userPos, active, map]);
+  return null;
+}
+
+// Initial fit to show full route
+function FitRoute({ route, userPos, done }: { route: RouteInfo | null; userPos: [number, number] | null; done: React.MutableRefObject<boolean> }) {
+  const map = useMap();
+  useEffect(() => {
+    if (route && route.coordinates.length > 1 && !done.current) {
       const allPoints = [...route.coordinates];
       if (userPos) allPoints.push(userPos);
       const lats = allPoints.map(p => p[0]);
       const lngs = allPoints.map(p => p[1]);
-      map.fitBounds([[Math.min(...lats), Math.min(...lngs)], [Math.max(...lats), Math.max(...lngs)]], { padding: [40, 40] });
-      fitted.current = true;
+      map.fitBounds([[Math.min(...lats), Math.min(...lngs)], [Math.max(...lats), Math.max(...lngs)]], { padding: [50, 50] });
+      // After 2s start following user
+      setTimeout(() => { done.current = true; }, 2000);
     }
-  }, [route, userPos, map]);
-  return null;
-}
-
-// Recenter map on user position
-function RecenterOnUser({ userPos, follow }: { userPos: [number, number] | null; follow: boolean }) {
-  const map = useMap();
-  useEffect(() => {
-    if (userPos && follow) {
-      map.setView(userPos, map.getZoom(), { animate: true });
-    }
-  }, [userPos, follow, map]);
+  }, [route, userPos, map, done]);
   return null;
 }
 
 export default function MapScreen({ target, missions, onViewDetails, onArrived, onEtaUpdate, defaultCountry }: Props) {
   const [userPos, setUserPos] = useState<[number, number] | null>(null);
   const [route, setRoute] = useState<RouteInfo | null>(null);
+  const [remainingRoute, setRemainingRoute] = useState<[number, number][]>([]);
   const [loadingRoute, setLoadingRoute] = useState(false);
-  const [followUser, setFollowUser] = useState(false);
   const [arrived, setArrived] = useState(false);
   const [gpsError, setGpsError] = useState('');
+  const [liveDistanceM, setLiveDistanceM] = useState<number | null>(null);
+  const [liveEtaSec, setLiveEtaSec] = useState<number | null>(null);
+
   const watchIdRef = useRef<number | null>(null);
   const arrivedRef = useRef(false);
+  const fittedRef = useRef(false);
+  const lastRouteCalcRef = useRef(0);
+  const lastSyncRef = useRef(0);
+  const routeStartTimeRef = useRef(0);
+  const routeStartDurationRef = useRef(0);
 
   const cc = getCountryCenter(defaultCountry || 'CI');
   const center: [number, number] = target ? [target.lat, target.lng] : [cc.lat, cc.lng];
-  const activeMissions = missions.filter(m => m.statut !== 'TERMINE');
 
-  // Start GPS tracking
+  // GPS tracking
   useEffect(() => {
-    if (!navigator.geolocation) {
-      setGpsError('GPS non disponible');
-      return;
-    }
+    if (!navigator.geolocation) { setGpsError('GPS non disponible'); return; }
 
     arrivedRef.current = false;
     setArrived(false);
+    fittedRef.current = false;
 
     watchIdRef.current = navigator.geolocation.watchPosition(
       (pos) => {
@@ -118,196 +145,187 @@ export default function MapScreen({ target, missions, onViewDetails, onArrived, 
         setUserPos(newPos);
         setGpsError('');
 
-        // Check arrival proximity
-        if (target && !arrivedRef.current) {
-          const dist = distanceMeters(newPos[0], newPos[1], target.lat, target.lng);
-          if (dist < ARRIVAL_THRESHOLD_METERS) {
+        // Live distance
+        if (target) {
+          const dist = Math.round(distanceMeters(newPos[0], newPos[1], target.lat, target.lng));
+          setLiveDistanceM(dist);
+
+          // Auto-arrival
+          if (!arrivedRef.current && dist < ARRIVAL_THRESHOLD_METERS) {
             arrivedRef.current = true;
             setArrived(true);
+            setLiveEtaSec(0);
             if (onArrived) onArrived(target.missionId);
           }
         }
       },
-      (err) => {
-        console.error('[GPS]', err);
-        setGpsError('Impossible d\'acceder au GPS');
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 3000 }
+      () => setGpsError('Impossible d\'acceder au GPS'),
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 2000 }
     );
 
-    return () => {
-      if (watchIdRef.current !== null) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-      }
-    };
+    return () => { if (watchIdRef.current !== null) navigator.geolocation.clearWatch(watchIdRef.current); };
   }, [target, onArrived]);
 
-  // Fetch route when user position is available and target exists
+  // Route calculation — periodic recalculation
   useEffect(() => {
-    if (!userPos || !target) return;
-    if (arrived) return;
+    if (!userPos || !target || arrived) return;
 
-    setLoadingRoute(true);
+    const now = Date.now();
+    if (now - lastRouteCalcRef.current < ROUTE_RECALC_INTERVAL && route) return;
+    lastRouteCalcRef.current = now;
+
+    setLoadingRoute(!route); // Only show loading on first calc
     fetchRoute(userPos[0], userPos[1], target.lat, target.lng).then(r => {
-      setRoute(r);
-      setLoadingRoute(false);
-      // Sync ETA to citizen app
-      if (r && target && onEtaUpdate) {
-        onEtaUpdate(target.missionId, r.distance_km, r.duration_min);
+      if (r) {
+        setRoute(r);
+        setLiveEtaSec(r.duration_sec);
+        routeStartTimeRef.current = Date.now();
+        routeStartDurationRef.current = r.duration_sec;
+        setLoadingRoute(false);
+
+        // Sync to citizen
+        if (onEtaUpdate && now - lastSyncRef.current >= ETA_SYNC_INTERVAL) {
+          lastSyncRef.current = now;
+          onEtaUpdate(target.missionId, r.distance_km, r.duration_min);
+        }
       }
     });
-  }, [userPos?.[0]?.toFixed(3), userPos?.[1]?.toFixed(3), target?.missionId, arrived]);
+  }, [userPos, target, arrived]);
 
-  // Remaining distance/ETA from current position
-  const liveDistance = userPos && target
-    ? Math.round(distanceMeters(userPos[0], userPos[1], target.lat, target.lng))
-    : null;
+  // Update remaining route segment (visual: route gets "eaten")
+  useEffect(() => {
+    if (route && userPos && !arrived) {
+      setRemainingRoute(getRemainingRoute(route.coordinates, userPos));
+    }
+  }, [route, userPos, arrived]);
+
+  // Countdown timer — decrement ETA every second between route recalculations
+  useEffect(() => {
+    if (arrived || !route) return;
+    const interval = setInterval(() => {
+      const elapsed = Math.round((Date.now() - routeStartTimeRef.current) / 1000);
+      const remaining = Math.max(0, routeStartDurationRef.current - elapsed);
+      setLiveEtaSec(remaining);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [route, arrived]);
+
+  const displayDistance = liveDistanceM !== null ? formatDistance(liveDistanceM) : '--';
+  const displayEta = liveEtaSec !== null ? formatDuration(liveEtaSec) : '--';
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden fade-in">
-      {/* Navigation header */}
+      {/* ══ Navigation header ══ */}
       {target && (
-        <div className={`px-4 py-3 shrink-0 ${arrived ? 'bg-gradient-to-r from-emerald-600 to-emerald-500' : 'bg-gradient-to-r from-blue-600 to-indigo-600'} text-white`}>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl">
-              {arrived ? '📍' : '🧭'}
+        <div className={`shrink-0 ${arrived ? 'bg-gradient-to-r from-emerald-600 to-emerald-500' : 'bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900'} text-white`}>
+          {/* Main info */}
+          <div className="flex items-center gap-3 px-4 pt-3 pb-2">
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl ${arrived ? 'bg-white/20' : 'bg-blue-600'}`}>
+              {arrived ? '✅' : '🚒'}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-wider opacity-80">
-                {arrived ? 'Arrive sur place' : 'Navigation en cours'}
+              <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">
+                {arrived ? 'Arrive sur place' : 'En route vers le sinistre'}
               </p>
-              <p className="text-sm font-semibold truncate">{target.label}</p>
-            </div>
-            <div className="text-right">
-              {route && !arrived && (
-                <>
-                  <p className="text-lg font-extrabold">{route.duration_min} min</p>
-                  <p className="text-[10px] opacity-80">{route.distance_km} km</p>
-                </>
-              )}
-              {liveDistance !== null && !arrived && !route && (
-                <>
-                  <p className="text-lg font-extrabold">{liveDistance < 1000 ? `${liveDistance} m` : `${(liveDistance / 1000).toFixed(1)} km`}</p>
-                  <p className="text-[10px] opacity-80">a vol d'oiseau</p>
-                </>
-              )}
-              {arrived && (
-                <p className="text-sm font-bold">✅ Sur place</p>
-              )}
+              <p className="text-[13px] font-semibold truncate mt-0.5">{target.label}</p>
             </div>
           </div>
 
-          {/* Route info bar */}
-          {route && !arrived && (
-            <div className="flex items-center gap-3 mt-2 bg-white/10 rounded-xl px-3 py-2">
-              <div className="flex-1">
-                <div className="flex items-center gap-1.5 text-[11px]">
-                  <span className="w-2 h-2 rounded-full bg-blue-300" />
-                  <span>Itineraire le plus rapide</span>
-                </div>
+          {/* Live distance + ETA bar */}
+          {!arrived && (
+            <div className="flex items-stretch border-t border-white/10">
+              <div className="flex-1 text-center py-2.5 border-r border-white/10">
+                <p className="text-2xl font-extrabold tracking-tight">{displayEta}</p>
+                <p className="text-[9px] uppercase tracking-widest opacity-50 mt-0.5">Temps restant</p>
               </div>
-              <span className="text-xs font-mono opacity-80">{route.distance_km} km — {route.duration_min} min</span>
+              <div className="flex-1 text-center py-2.5">
+                <p className="text-2xl font-extrabold tracking-tight">{displayDistance}</p>
+                <p className="text-[9px] uppercase tracking-widest opacity-50 mt-0.5">Distance</p>
+              </div>
+            </div>
+          )}
+
+          {arrived && (
+            <div className="text-center pb-3">
+              <p className="text-sm font-bold opacity-90">Statut automatiquement mis a jour</p>
             </div>
           )}
 
           {loadingRoute && (
-            <p className="text-[11px] mt-2 opacity-70 animate-pulse">Calcul de l'itineraire...</p>
+            <div className="px-4 pb-2">
+              <p className="text-[11px] opacity-60 animate-pulse">Calcul de l'itineraire...</p>
+            </div>
           )}
         </div>
       )}
 
       {/* GPS error */}
       {gpsError && (
-        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 text-xs text-amber-700 font-medium">
-          ⚠️ {gpsError} — L'itineraire sera calcule des que le GPS sera disponible
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 text-xs text-amber-700 font-medium shrink-0">
+          ⚠️ {gpsError}
         </div>
       )}
 
-      {/* Map */}
+      {/* ══ MAP ══ */}
       <div className="flex-1 relative">
-        {/* Map controls */}
+        {/* Zoom controls */}
         <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
-          {userPos && (
-            <button onClick={() => setFollowUser(!followUser)}
-              className={`w-10 h-10 rounded-xl shadow-lg flex items-center justify-center text-lg transition-all ${followUser ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border border-gray-200'}`}>
-              📍
+          {target && !arrived && (
+            <button onClick={() => { fittedRef.current = false; }}
+              className="w-10 h-10 rounded-xl shadow-lg flex items-center justify-center text-sm font-bold bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 transition-all">
+              ⊞
             </button>
           )}
         </div>
 
-        {/* Legend */}
-        <div className="absolute bottom-4 left-4 z-[1000] bg-white/90 backdrop-blur-sm rounded-xl border border-gray-200 shadow-lg px-3 py-2.5">
-          <p className="text-[10px] font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Legende</p>
-          <div className="space-y-1.5">
-            {[
-              { color: '#3b82f6', label: 'Votre position' },
-              { color: '#a855f7', label: 'En route' },
-              { color: '#f97316', label: 'Sur place' },
-              { color: '#ef4444', label: 'Destination' },
-            ].map(item => (
-              <div key={item.label} className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                <span className="text-[10px] text-gray-600 font-medium">{item.label}</span>
-              </div>
-            ))}
-            {route && (
-              <div className="flex items-center gap-2">
-                <span className="w-4 h-0.5 rounded shrink-0" style={{ backgroundColor: '#3b82f6' }} />
-                <span className="text-[10px] text-gray-600 font-medium">Itineraire</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <MapContainer center={center} zoom={target ? 14 : 13} style={{ height: '100%', width: '100%' }} zoomControl={false}>
-          <FitRoute route={route} userPos={userPos} />
-          <RecenterOnUser userPos={userPos} follow={followUser} />
+        <MapContainer center={center} zoom={target ? 15 : 13} style={{ height: '100%', width: '100%' }} zoomControl={false}>
+          <FitRoute route={route} userPos={userPos} done={fittedRef} />
+          <FollowDriver userPos={userPos} active={fittedRef.current && !arrived} />
           <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" attribution="CARTO" />
 
-          {/* Route polyline */}
+          {/* Full route (faded background) */}
           {route && !arrived && (
+            <Polyline positions={route.coordinates} pathOptions={{ color: '#93c5fd', weight: 6, opacity: 0.3 }} />
+          )}
+
+          {/* Remaining route (bright) */}
+          {remainingRoute.length > 1 && !arrived && (
             <>
-              {/* Shadow line */}
-              <Polyline positions={route.coordinates} pathOptions={{ color: '#1e40af', weight: 8, opacity: 0.15 }} />
-              {/* Main route line */}
-              <Polyline positions={route.coordinates} pathOptions={{ color: '#3b82f6', weight: 5, opacity: 0.85 }} />
+              <Polyline positions={remainingRoute} pathOptions={{ color: '#1e40af', weight: 8, opacity: 0.15 }} />
+              <Polyline positions={remainingRoute} pathOptions={{ color: '#3b82f6', weight: 5, opacity: 0.9 }} />
             </>
           )}
 
-          {/* User position */}
+          {/* User position — blue pulsing dot */}
           {userPos && (
             <>
-              {/* Accuracy circle */}
-              <Circle center={userPos} radius={50}
-                pathOptions={{ color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.08, weight: 1, opacity: 0.3 }} />
-              {/* User dot */}
-              <CircleMarker center={userPos} radius={8}
+              <Circle center={userPos} radius={40}
+                pathOptions={{ color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.1, weight: 1, opacity: 0.4 }} />
+              <CircleMarker center={userPos} radius={9}
                 pathOptions={{ color: '#ffffff', fillColor: '#3b82f6', fillOpacity: 1, weight: 3 }}>
-                <Tooltip permanent direction="top" offset={[0, -12]}
-                  className="!bg-blue-600 !text-white !border-0 !shadow-lg !rounded-lg !px-2 !py-1 !text-[10px] !font-bold">
-                  Vous
+                <Tooltip permanent direction="top" offset={[0, -14]}
+                  className="!bg-blue-600 !text-white !border-0 !shadow-lg !rounded-lg !px-2.5 !py-1 !text-[10px] !font-bold">
+                  {arrived ? 'Sur place' : displayEta}
                 </Tooltip>
               </CircleMarker>
             </>
           )}
 
-          {/* Destination marker */}
+          {/* Destination */}
           {target && (
             <>
               <Circle center={[target.lat, target.lng]} radius={ARRIVAL_THRESHOLD_METERS}
-                pathOptions={{ color: arrived ? '#22c55e' : '#ef4444', fillColor: arrived ? '#22c55e' : '#ef4444', fillOpacity: 0.08, weight: 1.5, dashArray: arrived ? undefined : '8 6' }} />
-              <CircleMarker center={[target.lat, target.lng]} radius={14}
-                pathOptions={{ color: arrived ? '#22c55e' : '#ef4444', fillColor: arrived ? '#22c55e40' : '#ef444440', fillOpacity: 0.6, weight: 3 }}>
+                pathOptions={{ color: arrived ? '#22c55e' : '#ef4444', fillColor: arrived ? '#22c55e' : '#ef4444', fillOpacity: 0.06, weight: 1.5, dashArray: arrived ? undefined : '8 6' }} />
+              <CircleMarker center={[target.lat, target.lng]} radius={12}
+                pathOptions={{ color: arrived ? '#22c55e' : '#ef4444', fillColor: arrived ? '#dcfce7' : '#fee2e2', fillOpacity: 0.9, weight: 3 }}>
                 <Tooltip permanent direction="top" offset={[0, -16]}
                   className="!bg-white !border !border-gray-200 !shadow-lg !rounded-xl !px-2.5 !py-1.5 !text-[11px]">
                   <div className="text-center leading-tight">
                     <p className="font-bold" style={{ color: arrived ? '#22c55e' : '#ef4444' }}>
-                      {arrived ? '✅ Arrive' : '🎯 Destination'}
+                      {arrived ? '✅ Arrive' : '🎯 Sinistre'}
                     </p>
-                    {liveDistance !== null && !arrived && (
-                      <p className="text-gray-400 text-[9px] mt-0.5">
-                        {liveDistance < 1000 ? `${liveDistance} m` : `${(liveDistance / 1000).toFixed(1)} km`}
-                      </p>
+                    {!arrived && liveDistanceM !== null && (
+                      <p className="text-gray-500 text-[9px] mt-0.5">{displayDistance}</p>
                     )}
                   </div>
                 </Tooltip>
@@ -315,18 +333,17 @@ export default function MapScreen({ target, missions, onViewDetails, onArrived, 
             </>
           )}
 
-          {/* Other missions */}
+          {/* Other missions (dimmed) */}
           {missions.filter(m => m.id !== target?.missionId).map(m => {
             const col = statusColors[m.statut] || statusColors.NOUVEAU;
             return (
-              <CircleMarker key={m.id} center={[m.lat, m.lng]} radius={8}
-                pathOptions={{ color: col.stroke, fillColor: col.fill, fillOpacity: 0.4, weight: 2 }}
+              <CircleMarker key={m.id} center={[m.lat, m.lng]} radius={6}
+                pathOptions={{ color: col.stroke, fillColor: col.fill, fillOpacity: 0.3, weight: 1.5 }}
                 eventHandlers={{ click: () => onViewDetails(m.id) }}>
                 <Popup>
                   <div className="text-xs min-w-[140px]">
-                    <p className="font-bold text-gray-900 text-sm mb-1">{incidentIcons[m.type_incident] || '⚠️'} {m.type_incident}</p>
-                    <p className="text-gray-500 mb-0.5">📍 {m.adresse}</p>
-                    <p className="text-gray-400 font-mono text-[10px]">{m.code}</p>
+                    <p className="font-bold text-gray-900 text-sm">{m.type_incident}</p>
+                    <p className="text-gray-500">📍 {m.adresse}</p>
                   </div>
                 </Popup>
               </CircleMarker>
@@ -335,34 +352,28 @@ export default function MapScreen({ target, missions, onViewDetails, onArrived, 
         </MapContainer>
       </div>
 
-      {/* Bottom action bar */}
+      {/* ══ Bottom bar ══ */}
       {target && (
         <div className="bg-white border-t border-gray-100 px-4 py-3 shrink-0">
           {arrived ? (
             <div className="text-center">
-              <p className="text-emerald-600 font-bold text-sm mb-2">✅ Statut mis a jour — SUR PLACE</p>
+              <p className="text-emerald-600 font-bold text-sm mb-2">✅ Arrive — Statut synchronise avec le citoyen</p>
               <button onClick={() => onViewDetails(target.missionId)}
                 className="w-full py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-xl font-semibold text-sm transition-all active:scale-[0.98]">
                 Voir les details de la mission
               </button>
             </div>
           ) : (
-            <div className="flex gap-2">
-              <button onClick={() => onViewDetails(target.missionId)}
-                className="flex-1 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-xl font-semibold text-sm transition-all active:scale-[0.98]">
-                Details mission
-              </button>
-              <button onClick={() => setFollowUser(!followUser)}
-                className={`px-4 py-3 rounded-xl font-semibold text-sm transition-all active:scale-[0.98] ${followUser ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-600 border border-blue-200'}`}>
-                {followUser ? '📍 Suivi ON' : '📍 Suivre'}
-              </button>
-            </div>
+            <button onClick={() => onViewDetails(target.missionId)}
+              className="w-full py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-xl font-semibold text-sm transition-all active:scale-[0.98]">
+              Details de la mission
+            </button>
           )}
         </div>
       )}
 
-      {/* No target — show all missions on map */}
-      {!target && activeMissions.length === 0 && (
+      {/* No target */}
+      {!target && missions.filter(m => m.statut !== 'TERMINE').length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[500]">
           <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 text-center shadow-lg pointer-events-auto">
             <p className="text-3xl mb-2">🗺️</p>
