@@ -119,6 +119,7 @@ export default function MapScreen({ target, missions, onViewDetails, onArrived, 
   const [gpsError, setGpsError] = useState('');
   const [liveDistanceM, setLiveDistanceM] = useState<number | null>(null);
   const [liveEtaSec, setLiveEtaSec] = useState<number | null>(null);
+  const [routeDistanceM, setRouteDistanceM] = useState<number | null>(null);
 
   const watchIdRef = useRef<number | null>(null);
   const arrivedRef = useRef(false);
@@ -161,6 +162,8 @@ export default function MapScreen({ target, missions, onViewDetails, onArrived, 
             arrivedRef.current = true;
             setArrived(true);
             setLiveEtaSec(0);
+            setRouteDistanceM(0);
+            setLiveDistanceM(0);
             if (onArrivedRef.current) onArrivedRef.current(target.missionId);
           }
         }
@@ -184,6 +187,7 @@ export default function MapScreen({ target, missions, onViewDetails, onArrived, 
     fetchRoute(userPos[0], userPos[1], target.lat, target.lng).then(r => {
       if (r) {
         setRoute(r);
+        setRouteDistanceM(Math.round(r.distance_km * 1000));
         setLiveEtaSec(r.duration_sec);
         routeStartTimeRef.current = Date.now();
         routeStartDurationRef.current = r.duration_sec;
@@ -216,8 +220,9 @@ export default function MapScreen({ target, missions, onViewDetails, onArrived, 
     return () => clearInterval(interval);
   }, [route, arrived]);
 
-  const displayDistance = liveDistanceM !== null ? formatDistance(liveDistanceM) : '--';
-  const displayEta = liveEtaSec !== null ? formatDuration(liveEtaSec) : '--';
+  // Use OSRM route distance (real road distance), fallback to Haversine
+  const displayDistance = arrived ? '0 m' : routeDistanceM !== null ? formatDistance(routeDistanceM) : liveDistanceM !== null ? formatDistance(liveDistanceM) : '--';
+  const displayEta = arrived ? '0 s' : liveEtaSec !== null ? formatDuration(liveEtaSec) : '--';
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden fade-in">
