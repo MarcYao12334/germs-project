@@ -17,7 +17,15 @@ export default function Missions({ missions, onViewDetails, onAccept }: Props) {
     return true;
   });
 
-  const activeMissions = missions.filter(m => m.statut !== 'TERMINE');
+  // Sort: active missions first, then terminated/cancelled at the bottom
+  const sorted = [...filtered].sort((a, b) => {
+    const done = ['TERMINE', 'ANNULEE'];
+    const aDone = done.includes(a.statut) ? 1 : 0;
+    const bDone = done.includes(b.statut) ? 1 : 0;
+    return aDone - bDone;
+  });
+
+  const activeMissions = missions.filter(m => m.statut !== 'TERMINE' && m.statut !== 'ANNULEE');
 
   const filters = [
     { key: 'all' as const, label: `Toutes (${missions.length})`, color: 'blue' },
@@ -50,8 +58,10 @@ export default function Missions({ missions, onViewDetails, onAccept }: Props) {
           <p className="text-sm text-gray-400">Aucune mission dans cette categorie</p>
         </div>
       ) : (
-        filtered.map(m => (
-          <MissionCard key={m.id} mission={m} onViewDetails={onViewDetails} onAccept={onAccept} />
+        sorted.map(m => (
+          <div key={m.id} className={m.statut === 'TERMINE' || m.statut === 'ANNULEE' ? 'opacity-50 pointer-events-none' : ''}>
+            <MissionCard mission={m} onViewDetails={onViewDetails} onAccept={onAccept} />
+          </div>
         ))
       )}
     </div>
