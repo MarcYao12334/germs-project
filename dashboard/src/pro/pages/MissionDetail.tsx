@@ -15,10 +15,10 @@ interface Props {
   onBack: () => void;
   onStatusChange: (id: string, newStatus: string) => void;
   onCall: (tel: string) => void;
-  onNavigate: (lat: number, lng: number) => void;
+  onEnRoute: (id: string) => void;
 }
 
-export default function MissionDetail({ mission, onBack, onStatusChange, onCall, onNavigate }: Props) {
+export default function MissionDetail({ mission, onBack, onStatusChange, onCall, onEnRoute }: Props) {
   const currentIdx = statusFlow.indexOf(mission.statut);
   const nextStatus = currentIdx < statusFlow.length - 1 ? statusFlow[currentIdx + 1] : null;
 
@@ -87,21 +87,13 @@ export default function MissionDetail({ mission, onBack, onStatusChange, onCall,
           </div>
         )}
 
-        {/* Navigation — only if not terminated */}
-        {mission.statut !== 'TERMINE' && (
-          <button onClick={() => onNavigate(mission.lat, mission.lng)}
-            className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2">
-            🧭 Lancer la navigation GPS
-          </button>
-        )}
-
         {/* Status update */}
-        {mission.statut !== 'TERMINE' && (
+        {mission.statut !== 'TERMINE' && mission.statut !== 'ANNULEE' && (
           <div>
             <p className="text-xs font-bold text-gray-500 mb-2">METTRE A JOUR LE STATUT</p>
             <div className="grid grid-cols-3 gap-2">
               {mission.statut === 'NOUVEAU' && (
-                <button onClick={() => onStatusChange(mission.id, 'EN_ROUTE')}
+                <button onClick={() => onEnRoute(mission.id)}
                   className="col-span-3 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold text-sm transition-all active:scale-[0.98]">
                   🚒 En route
                 </button>

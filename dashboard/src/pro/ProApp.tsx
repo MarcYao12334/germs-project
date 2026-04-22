@@ -187,7 +187,7 @@ export default function ProApp() {
       <div className="flex-1 overflow-hidden flex flex-col">
         {screen === 'missions' && <Missions missions={missions} onViewDetails={handleViewDetails} onAccept={handleAccept} />}
         {screen === 'detail' && selectedMission && (
-          <MissionDetail mission={selectedMission} onBack={() => setScreen('missions')} onStatusChange={handleStatusChange} onCall={handleCall} onNavigate={handleNavigate} />
+          <MissionDetail mission={selectedMission} onBack={() => setScreen('missions')} onStatusChange={handleStatusChange} onCall={handleCall} onEnRoute={handleAccept} />
         )}
         {screen === 'detail' && !selectedMission && (
           <div className="flex-1 flex flex-col items-center justify-center p-6">
