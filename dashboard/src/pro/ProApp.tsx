@@ -27,6 +27,22 @@ export default function ProApp() {
   // Keep ref in sync with state
   useEffect(() => { teamRef.current = team; }, [team]);
 
+  // Re-announce team on every connection/reconnection so Dashboard always knows about us
+  useEffect(() => {
+    if (!team) return;
+    const announceTeam = () => {
+      console.log('[Pro] Announcing team to Dashboard:', team.code);
+      proSync.send('team:registered', { ...team });
+    };
+    // Announce immediately
+    announceTeam();
+    // Also announce on reconnection
+    const unsub = proSync.onConnection((connected: boolean) => {
+      if (connected && team) announceTeam();
+    });
+    return unsub;
+  }, [team]);
+
   // Listen for new missions from Dashboard
   useEffect(() => {
     const unsubs = [
