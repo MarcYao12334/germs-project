@@ -19,10 +19,17 @@ interface MapTarget { lat: number; lng: number; label: string; missionId: string
 export default function ProApp() {
   const [team, setTeam] = useState<ProTeam | null>(proStorage.getTeam());
   const [screen, setScreen] = useState<Screen>(team ? 'missions' : 'register');
-  const [missions, setMissions] = useState<Mission[]>([]);
+  const [missions, setMissions] = useState<Mission[]>(() => {
+    try { const v = localStorage.getItem('germs_pro_missions'); return v ? JSON.parse(v) : []; } catch { return []; }
+  });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mapTarget, setMapTarget] = useState<MapTarget | null>(null);
   const teamRef = useRef<ProTeam | null>(team);
+
+  // Persist missions to localStorage
+  useEffect(() => {
+    try { localStorage.setItem('germs_pro_missions', JSON.stringify(missions)); } catch {}
+  }, [missions]);
 
   // Keep ref in sync with state
   useEffect(() => { teamRef.current = team; }, [team]);
@@ -77,16 +84,24 @@ export default function ProApp() {
           equipe_assignee: true,
           created_at: new Date().toISOString(),
         };
-        // Dedup: don't add if mission with same id already exists
+        // Dedup: don't add if mission with same id already exists (prevents catchup from resurrecting terminated missions)
         setMissions(prev => {
-          if (prev.some(m => m.id === newMission.id)) return prev;
+          const existing = prev.find(m => m.id === newMission.id || m.code === newMission.code);
+          if (existing) return prev; // Already have this mission — keep current status
           return [newMission, ...prev];
         });
       }),
       proSync.on('intervention:status-changed', (p: any) => {
-        setMissions(prev => prev.map(m =>
-          m.id === p.interventionId ? { ...m, statut: p.statut } : m
-        ));
+        const statusOrder = ['NOUVEAU', 'EN_ROUTE', 'SUR_PLACE', 'TERMINE', 'ANNULEE'];
+        setMissions(prev => prev.map(m => {
+          if (m.id !== p.interventionId) return m;
+          // Don't go backwards in status (prevents catchup from reverting)
+          const currentIdx = statusOrder.indexOf(m.statut);
+          const newIdx = statusOrder.indexOf(p.statut);
+          if (currentIdx >= 3) return m; // Already TERMINE or ANNULEE — don't change
+          if (newIdx <= currentIdx && newIdx < 3) return m; // Don't go backwards unless it's terminal
+          return { ...m, statut: p.statut };
+        }));
       }),
     ];
     return () => unsubs.forEach(u => u());
