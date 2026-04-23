@@ -10,7 +10,7 @@ services:
     plan: free
     buildCommand: cd backend && npm install && npm run build
     startCommand: cd backend && npm run start:prod
-    healthCheckPath: /api/health
+    healthCheckPath: /ping
     envVars:
       - key: NODE_ENV
         value: production
@@ -45,7 +45,7 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: CORS_ORIGIN
-        value: https://germs-dashboard.vercel.app
+        value: https://germs-project.vercel.app
 
 databases:
   - name: germs-db

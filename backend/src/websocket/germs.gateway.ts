@@ -20,10 +20,7 @@ interface SyncEvent {
 
 @WebSocketGateway({
   cors: {
-    origin: process.env.CORS_ORIGIN?.split(',') || [
-      'http://localhost:5173',
-      'https://germs-project.vercel.app',
-    ],
+    origin: true, // Accept all origins
     credentials: true,
   },
   transports: ['websocket', 'polling'],
