@@ -1,5 +1,4 @@
-// Cross-device sync via WebSocket (primary) + BroadcastChannel (same-browser fallback)
-// No localStorage polling — WebSocket is the source of truth for cross-device
+// GERMS Sync — Single shared instance with WebSocket + BroadcastChannel + localStorage fallback
 import { io, Socket } from 'socket.io-client';
 
 interface SyncEvent {
@@ -12,10 +11,23 @@ interface SyncEvent {
 type Handler = (payload: any) => void;
 type ConnectionCallback = (connected: boolean) => void;
 
-// Detect environment: if on Vercel (not localhost), use the Render URL
 const isProduction = typeof window !== 'undefined' && !window.location.hostname.includes('localhost');
 const WS_URL = import.meta.env.VITE_WS_URL || (isProduction ? 'https://germs-project.onrender.com' : 'http://localhost:3001');
-const KEEPALIVE_INTERVAL = 4 * 60 * 1000; // 4 minutes
+const KEEPALIVE_INTERVAL = 2 * 60 * 1000; // 2 min (more aggressive)
+const LS_SYNC_KEY = 'germs_sync_events';
+const LS_POLL_INTERVAL = 1500; // Poll localStorage every 1.5s as fallback
+const MAX_LS_EVENTS = 100;
+
+// Wake up Render backend immediately on page load
+function wakeBackend() {
+  fetch(`${WS_URL}/api/health`).catch(() => {});
+  fetch(`${WS_URL}/ping`).catch(() => {});
+}
+if (typeof window !== 'undefined') {
+  wakeBackend();
+  // Retry wake after 3s in case first attempt fails
+  setTimeout(wakeBackend, 3000);
+}
 
 class GermsSyncChannel {
   private socket: Socket | null = null;
@@ -25,15 +37,18 @@ class GermsSyncChannel {
   private myOrigin: 'dashboard' | 'citizen' | 'pro';
   private connected = false;
   private lastProcessedTs = 0;
-  private pendingEvents: SyncEvent[] = []; // Events sent while disconnected
+  private pendingEvents: SyncEvent[] = [];
   private keepAliveTimer: ReturnType<typeof setInterval> | null = null;
-  private processedIds = new Set<string>(); // Dedup
+  private lsPollTimer: ReturnType<typeof setInterval> | null = null;
+  private processedIds = new Set<string>();
+  private lastLsCheck = 0;
 
   constructor(origin: 'dashboard' | 'citizen' | 'pro') {
     this.myOrigin = origin;
-    this.lastProcessedTs = Date.now() - 600000; // Start 10 min ago to catch recent events
+    this.lastProcessedTs = Date.now() - 600000;
+    this.lastLsCheck = Date.now() - 5000;
 
-    // 1. WebSocket (cross-device — PRIMARY channel)
+    // 1. WebSocket (cross-device)
     try {
       this.socket = io(WS_URL, {
         transports: ['websocket', 'polling'],
@@ -41,20 +56,17 @@ class GermsSyncChannel {
         reconnectionDelay: 1000,
         reconnectionDelayMax: 5000,
         reconnectionAttempts: Infinity,
-        timeout: 30000,
+        timeout: 20000,
+        forceNew: false,
       });
 
       this.socket.on('connect', () => {
         this.connected = true;
-        console.log(`[Sync:${origin}] Connected to ${WS_URL}`);
+        console.log(`[Sync:${origin}] WS Connected`);
         this.notifyConnection(true);
-
-        // Request missed events since last known timestamp
         this.socket!.emit('sync-catchup', { lastTs: this.lastProcessedTs });
-
-        // Flush pending events (sent while disconnected)
+        // Flush pending
         if (this.pendingEvents.length > 0) {
-          console.log(`[Sync:${origin}] Flushing ${this.pendingEvents.length} pending events`);
           for (const event of this.pendingEvents) {
             this.socket!.emit('sync-event', event);
           }
@@ -62,42 +74,33 @@ class GermsSyncChannel {
         }
       });
 
-      this.socket.on('disconnect', (reason) => {
+      this.socket.on('disconnect', () => {
         this.connected = false;
-        console.log(`[Sync:${origin}] Disconnected: ${reason}`);
         this.notifyConnection(false);
       });
 
-      this.socket.on('connect_error', (err) => {
-        console.log(`[Sync:${origin}] Connection error: ${err.message}`);
+      this.socket.on('connect_error', () => {
+        this.connected = false;
         this.notifyConnection(false);
       });
 
-      // Receive live events
       this.socket.on('sync-event', (event: SyncEvent) => {
         if (event.origin === this.myOrigin) return;
         this.dispatch(event);
       });
 
-      // Receive catchup response (missed events)
       this.socket.on('sync-catchup-response', (data: { events: SyncEvent[] }) => {
-        console.log(`[Sync:${origin}] Catchup: ${data.events.length} missed events`);
         for (const event of data.events) {
           if (event.origin === this.myOrigin) continue;
           this.dispatch(event);
         }
       });
 
-      // Keep-alive acknowledgment
-      this.socket.on('keep-alive-ack', () => {
-        // Connection is alive
-      });
+      this.socket.on('keep-alive-ack', () => {});
 
-    } catch (err) {
-      console.log(`[Sync:${origin}] WebSocket init failed`);
-    }
+    } catch {}
 
-    // 2. BroadcastChannel (same-browser instant fallback)
+    // 2. BroadcastChannel (same browser, different tabs — instant)
     try {
       this.bc = new BroadcastChannel('germs-sync');
       this.bc.onmessage = (e) => {
@@ -107,53 +110,83 @@ class GermsSyncChannel {
       };
     } catch {}
 
-    // 3. Keep-alive ping every 4 min
+    // 3. localStorage polling (ultimate fallback — works everywhere)
+    this.lsPollTimer = setInterval(() => {
+      this.pollLocalStorage();
+    }, LS_POLL_INTERVAL);
+
+    // 4. Keep-alive
     this.keepAliveTimer = setInterval(() => {
       if (this.socket && this.connected) {
         this.socket.emit('keep-alive');
       }
-      // Also ping the server HTTP endpoint to prevent sleep
       fetch(`${WS_URL}/ping`).catch(() => {});
     }, KEEPALIVE_INTERVAL);
 
-    console.log(`[Sync:${origin}] Initialized — WS: ${WS_URL}`);
+    console.log(`[Sync:${origin}] Init — WS: ${WS_URL}`);
   }
 
   private dispatch(event: SyncEvent) {
-    // Dedup by timestamp + type + origin
     const eventId = `${event.ts}-${event.type}-${event.origin}`;
     if (this.processedIds.has(eventId)) return;
     this.processedIds.add(eventId);
-    // Keep dedup set small
     if (this.processedIds.size > 500) {
       const arr = Array.from(this.processedIds);
       this.processedIds = new Set(arr.slice(-250));
     }
-
     if (event.ts > this.lastProcessedTs) this.lastProcessedTs = event.ts;
 
     const handlers = this.listeners.get(event.type);
     if (handlers && handlers.size > 0) {
-      console.log(`[Sync:${this.myOrigin}] ← ${event.type} from ${event.origin}`);
-      handlers.forEach(h => h(event.payload));
+      console.log(`[Sync:${this.myOrigin}] <- ${event.type} from ${event.origin}`);
+      handlers.forEach(h => {
+        try { h(event.payload); } catch (err) { console.error('[Sync] Handler error:', err); }
+      });
     }
+  }
+
+  // localStorage fallback: write events and poll for new ones
+  private writeToLocalStorage(event: SyncEvent) {
+    try {
+      const raw = localStorage.getItem(LS_SYNC_KEY);
+      const events: SyncEvent[] = raw ? JSON.parse(raw) : [];
+      events.push(event);
+      // Keep only recent events
+      const recent = events.filter(e => Date.now() - e.ts < 60000).slice(-MAX_LS_EVENTS);
+      localStorage.setItem(LS_SYNC_KEY, JSON.stringify(recent));
+    } catch {}
+  }
+
+  private pollLocalStorage() {
+    try {
+      const raw = localStorage.getItem(LS_SYNC_KEY);
+      if (!raw) return;
+      const events: SyncEvent[] = JSON.parse(raw);
+      for (const event of events) {
+        if (event.origin === this.myOrigin) continue;
+        if (event.ts <= this.lastLsCheck) continue;
+        this.dispatch(event);
+      }
+      this.lastLsCheck = Date.now();
+    } catch {}
   }
 
   send(type: string, payload: any) {
     const event: SyncEvent = { type, payload, origin: this.myOrigin, ts: Date.now() };
-    console.log(`[Sync:${this.myOrigin}] → ${type}`);
+    console.log(`[Sync:${this.myOrigin}] -> ${type}`);
 
-    // WebSocket (primary — cross-device)
+    // WebSocket
     if (this.socket && this.connected) {
       this.socket.emit('sync-event', event);
     } else {
-      // Store for later flush when reconnected
       this.pendingEvents.push(event);
-      console.log(`[Sync:${this.myOrigin}] Queued (offline): ${type} (${this.pendingEvents.length} pending)`);
     }
 
-    // BroadcastChannel (same-browser instant)
+    // BroadcastChannel
     try { this.bc?.postMessage(event); } catch {}
+
+    // localStorage fallback (always write — works even if WS and BC fail)
+    this.writeToLocalStorage(event);
   }
 
   on(type: string, handler: Handler): () => void {
@@ -164,7 +197,6 @@ class GermsSyncChannel {
 
   onConnection(callback: ConnectionCallback): () => void {
     this.connectionListeners.add(callback);
-    // Immediately notify current state
     callback(this.connected);
     return () => { this.connectionListeners.delete(callback); };
   }
@@ -179,6 +211,7 @@ class GermsSyncChannel {
 
   destroy() {
     if (this.keepAliveTimer) clearInterval(this.keepAliveTimer);
+    if (this.lsPollTimer) clearInterval(this.lsPollTimer);
     this.socket?.disconnect();
     this.bc?.close();
     this.listeners.clear();
@@ -186,6 +219,12 @@ class GermsSyncChannel {
   }
 }
 
+// Singleton cache — only create ONE instance per origin
+const instances = new Map<string, GermsSyncChannel>();
+
 export function createSync(origin: 'dashboard' | 'citizen' | 'pro') {
-  return new GermsSyncChannel(origin);
+  if (!instances.has(origin)) {
+    instances.set(origin, new GermsSyncChannel(origin));
+  }
+  return instances.get(origin)!;
 }

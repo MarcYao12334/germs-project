@@ -71,7 +71,7 @@ const alertSound = new AlertSound();
 // ════════════════════════════════════════════
 //  TOP BAR
 // ════════════════════════════════════════════
-function TopBar({ user, onLogout }: { user: any; onLogout: () => void }) {
+function TopBar({ user, onLogout, wsConnected }: { user: any; onLogout: () => void; wsConnected: boolean }) {
   const [time, setTime] = useState(new Date());
   useEffect(() => { const i = setInterval(() => setTime(new Date()), 1000); return () => clearInterval(i); }, []);
 
@@ -89,9 +89,9 @@ function TopBar({ user, onLogout }: { user: any; onLogout: () => void }) {
       <div className="flex-1" />
       <div className="flex items-center gap-2 md:gap-5 text-[11px] md:text-[13px]">
         <span className="text-gray-400 font-mono hidden md:inline">{time.toLocaleTimeString('fr-FR')}</span>
-        <div className="flex items-center gap-1.5 bg-emerald-500/15 px-2 md:px-3 py-1 md:py-1.5 rounded-lg">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 pulse-dot" />
-          <span className="text-emerald-400 font-semibold text-[10px] md:text-xs hidden sm:inline">EN LIGNE</span>
+        <div className={`flex items-center gap-1.5 ${wsConnected ? 'bg-emerald-500/15' : 'bg-red-500/15'} px-2 md:px-3 py-1 md:py-1.5 rounded-lg`}>
+          <span className={`w-2 h-2 rounded-full ${wsConnected ? 'bg-emerald-400 pulse-dot' : 'bg-red-400'}`} />
+          <span className={`${wsConnected ? 'text-emerald-400' : 'text-red-400'} font-semibold text-[10px] md:text-xs hidden sm:inline`}>{wsConnected ? 'EN LIGNE' : 'HORS LIGNE'}</span>
         </div>
         <div className="h-5 w-px bg-gray-700 hidden md:block" />
         <div className="flex items-center gap-2 hidden md:flex">
@@ -680,6 +680,12 @@ export default function CommandCenter({ user, onLogout }: Props) {
 
   const countryCenter = getCountryCenter(user.pays || 'CI');
 
+  // Track WebSocket connection status
+  const [wsConnected, setWsConnected] = useState(dashboardSync.isConnected());
+  useEffect(() => {
+    return dashboardSync.onConnection(setWsConnected);
+  }, []);
+
   const handleIntvClick = useCallback((intv: Intervention) => {
     setSelectedIntvId(prev => prev === intv.id ? null : intv.id);
     setSelectedAlertId(null); setSelectedTeamId(null);
@@ -721,9 +727,11 @@ export default function CommandCenter({ user, onLogout }: Props) {
       }
       setAlerts(prev => {
         if (prev.some(a => a.id === incoming.id)) return prev;
-        // Only play alarm and update stats for genuinely new alerts
-        alertSound.play();
-        setStats(s => ({ ...s, alertes_en_attente: s.alertes_en_attente + 1 }));
+        // Schedule alarm + stats update via microtask (safe outside setState)
+        queueMicrotask(() => {
+          alertSound.play();
+          setStats(s => ({ ...s, alertes_en_attente: s.alertes_en_attente + 1 }));
+        });
         return [incoming, ...prev];
       });
     });
@@ -881,7 +889,7 @@ export default function CommandCenter({ user, onLogout }: Props) {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ background: 'linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 30%, #fefce8 60%, #fdf2f8 100%)' }}>
-      <TopBar user={user} onLogout={onLogout} />
+      <TopBar user={user} onLogout={onLogout} wsConnected={wsConnected} />
       <KpiBar stats={stats} />
 
       {/* Main area — scrollable */}
