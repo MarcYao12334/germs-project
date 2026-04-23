@@ -44,7 +44,7 @@ export default function ProRegister({ onDone }: Props) {
   const [step, setStep] = useState<'login' | 'team' | 'members' | 'otp'>('login');
 
   // Login
-  const [loginCode, setLoginCode] = useState('');
+  const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
 
@@ -101,13 +101,13 @@ export default function ProRegister({ onDone }: Props) {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
-    if (!loginCode.trim() || !loginPassword) {
+    if (!loginEmail.trim() || !loginPassword) {
       setLoginError('Veuillez remplir tous les champs');
       return;
     }
-    const account = proStorage.findAccount(loginCode.trim().toUpperCase(), loginPassword);
+    const account = proStorage.findByEmail(loginEmail.trim().toLowerCase(), loginPassword);
     if (!account) {
-      setLoginError('Code equipe ou mot de passe incorrect');
+      setLoginError('Email ou mot de passe incorrect');
       return;
     }
     proStorage.saveTeam(account.team);
@@ -175,10 +175,10 @@ export default function ProRegister({ onDone }: Props) {
 
           <form onSubmit={handleLogin} className="w-full space-y-4">
             <div>
-              <label className="block text-xs font-bold text-gray-500 mb-1">Code equipe *</label>
-              <input className="input-field text-center uppercase tracking-widest font-mono"
-                value={loginCode} onChange={e => { setLoginCode(e.target.value); setLoginError(''); }}
-                placeholder="EQ-XXXXXX" required />
+              <label className="block text-xs font-bold text-gray-500 mb-1">Email *</label>
+              <input type="email" className="input-field"
+                value={loginEmail} onChange={e => { setLoginEmail(e.target.value); setLoginError(''); }}
+                placeholder="equipe@gspm.ci" required />
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-500 mb-1">Mot de passe *</label>

@@ -43,4 +43,8 @@ export const proStorage = {
     const accounts = proStorage.getAccounts();
     return accounts.find(a => a.team.code === code) || null;
   },
+  findByEmail: (email: string, password: string): ProAccount | null => {
+    const accounts = proStorage.getAccounts();
+    return accounts.find(a => a.email.toLowerCase() === email.toLowerCase() && a.password === password) || null;
+  },
 };
