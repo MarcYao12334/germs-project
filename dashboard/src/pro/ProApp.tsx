@@ -123,10 +123,9 @@ export default function ProApp() {
     setMissions(prev => prev.map(m => m.id === id ? { ...m, statut: 'EN_ROUTE' as const } : m));
     proSync.send('intervention:status-changed', { interventionId: id, statut: 'EN_ROUTE' });
     setSelectedId(id);
-    // Ouvrir Waze automatiquement pour la navigation
+    // Ouvrir la carte integree automatiquement
     if (mission && mission.lat && mission.lng) {
       setMapTarget({ lat: mission.lat, lng: mission.lng, label: mission.adresse, missionId: mission.id });
-      window.open(`https://waze.com/ul?ll=${mission.lat},${mission.lng}&navigate=yes`, '_blank');
       setScreen('carte');
     } else {
       setScreen('detail');

@@ -375,16 +375,10 @@ export default function MapScreen({ target, missions, onViewDetails, onArrived, 
               </button>
             </div>
           ) : (
-            <div className="flex gap-2">
-              <button onClick={() => onViewDetails(target.missionId)}
-                className="flex-1 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-xl font-semibold text-sm transition-all active:scale-[0.98]">
-                Details mission
-              </button>
-              <button onClick={() => window.open(`https://waze.com/ul?ll=${target.lat},${target.lng}&navigate=yes`, '_blank')}
-                className="flex-1 py-3 bg-[#33ccff] hover:bg-[#28b8e8] text-white rounded-xl font-semibold text-sm transition-all active:scale-[0.98] flex items-center justify-center gap-1.5">
-                🗺️ Ouvrir Waze
-              </button>
-            </div>
+            <button onClick={() => onViewDetails(target.missionId)}
+              className="w-full py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-xl font-semibold text-sm transition-all active:scale-[0.98]">
+              Details de la mission
+            </button>
           )}
         </div>
       )}
