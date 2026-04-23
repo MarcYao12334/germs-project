@@ -41,7 +41,12 @@ const countries = [
 interface Props { onDone: (team: ProTeam) => void; }
 
 export default function ProRegister({ onDone }: Props) {
-  const [step, setStep] = useState<'team' | 'members' | 'otp'>('team');
+  const [step, setStep] = useState<'login' | 'team' | 'members' | 'otp'>('login');
+
+  // Login
+  const [loginCode, setLoginCode] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
 
   // Country
   const [pays, setPays] = useState('CI');
@@ -56,7 +61,11 @@ export default function ProRegister({ onDone }: Props) {
   // Chef
   const [chefNom, setChefNom] = useState('');
   const [chefPrenoms, setChefPrenoms] = useState('');
-  const [chefGrade, setChefGrade] = useState(grades[2]); // Lieutenant
+  const [chefGrade, setChefGrade] = useState(grades[2]);
+
+  // Password (for registration)
+  const [regPassword, setRegPassword] = useState('');
+  const [regConfirm, setRegConfirm] = useState(''); // Lieutenant
 
   // Membres
   const [membres, setMembres] = useState<{ nom: string; prenoms: string; grade: string; role: string }[]>([]);
@@ -83,7 +92,27 @@ export default function ProRegister({ onDone }: Props) {
     else if (telephone.replace(/\s/g, '').length < 8) errs.telephone = 'Min 8 chiffres';
     if (!chefNom.trim()) errs.chefNom = 'Le nom du chef est obligatoire';
     if (!chefPrenoms.trim()) errs.chefPrenoms = 'Le prenom du chef est obligatoire';
+    if (!regPassword) errs.password = 'Le mot de passe est obligatoire';
+    else if (regPassword.length < 6) errs.password = 'Min 6 caracteres';
+    if (regPassword !== regConfirm) errs.confirm = 'Les mots de passe ne correspondent pas';
     return errs;
+  };
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError('');
+    if (!loginCode.trim() || !loginPassword) {
+      setLoginError('Veuillez remplir tous les champs');
+      return;
+    }
+    const account = proStorage.findAccount(loginCode.trim().toUpperCase(), loginPassword);
+    if (!account) {
+      setLoginError('Code equipe ou mot de passe incorrect');
+      return;
+    }
+    proStorage.saveTeam(account.team);
+    proStorage.setLoggedIn();
+    onDone(account.team);
   };
 
   const handleTeamSubmit = (e: React.FormEvent) => {
@@ -128,10 +157,58 @@ export default function ProRegister({ onDone }: Props) {
     };
     proStorage.saveTeam(team);
     proStorage.setLoggedIn();
+    // Save account with password for future logins
+    proStorage.saveAccount({ team, password: regPassword, email, telephone, created_at: new Date().toISOString() });
     // Notify Dashboard
     proSync.send('team:registered', { ...team, type_vehicule: typeVehicule, immatriculation, telephone, pays });
     onDone(team);
   };
+
+  // ── LOGIN SCREEN ──
+  if (step === 'login') {
+    return (
+      <div className="flex-1 flex flex-col p-6 fade-in">
+        <div className="flex-1 flex flex-col items-center justify-center">
+          <div className="w-16 h-16 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-3xl shadow-xl shadow-blue-500/20">🚒</div>
+          <h2 className="text-xl font-extrabold text-gray-900 mb-1">GERMS Pro</h2>
+          <p className="text-sm text-gray-500 mb-8">Connexion equipe pompiers</p>
+
+          <form onSubmit={handleLogin} className="w-full space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-gray-500 mb-1">Code equipe *</label>
+              <input className="input-field text-center uppercase tracking-widest font-mono"
+                value={loginCode} onChange={e => { setLoginCode(e.target.value); setLoginError(''); }}
+                placeholder="EQ-XXXXXX" required />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 mb-1">Mot de passe *</label>
+              <input type="password" className="input-field"
+                value={loginPassword} onChange={e => { setLoginPassword(e.target.value); setLoginError(''); }}
+                placeholder="••••••••" required />
+            </div>
+
+            {loginError && (
+              <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-2.5 text-center">
+                <p className="text-sm text-red-600 font-semibold">{loginError}</p>
+              </div>
+            )}
+
+            <button type="submit"
+              className="w-full py-3.5 bg-gradient-to-b from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-2xl font-bold text-[15px] shadow-lg shadow-blue-500/20 transition-all active:scale-[0.98]">
+              Se connecter
+            </button>
+          </form>
+
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-400">Pas encore de compte ?</p>
+            <button onClick={() => setStep('team')} className="text-sm text-blue-600 font-semibold hover:text-blue-700 mt-1 transition-colors">
+              Creer une equipe
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // ── STEP 1: Team info ──
   if (step === 'team') {
@@ -217,9 +294,34 @@ export default function ProRegister({ onDone }: Props) {
             </div>
           </div>
 
+          {/* Password */}
+          <div className="border-t border-gray-200 pt-4 mt-2">
+            <p className="text-xs font-bold text-gray-500 mb-3">MOT DE PASSE</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1">Mot de passe *</label>
+                <input type="password" className={`input-field ${teamErrors.password ? '!border-red-400' : ''}`}
+                  value={regPassword} onChange={e => { setRegPassword(e.target.value); setTeamErrors(prev => { const n = {...prev}; delete n.password; return n; }); }}
+                  placeholder="••••••••" required minLength={6} />
+                {teamErrors.password && <p className="text-[10px] text-red-500 mt-0.5">{teamErrors.password}</p>}
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1">Confirmer *</label>
+                <input type="password" className={`input-field ${teamErrors.confirm ? '!border-red-400' : ''}`}
+                  value={regConfirm} onChange={e => { setRegConfirm(e.target.value); setTeamErrors(prev => { const n = {...prev}; delete n.confirm; return n; }); }}
+                  placeholder="••••••••" required />
+                {teamErrors.confirm && <p className="text-[10px] text-red-500 mt-0.5">{teamErrors.confirm}</p>}
+              </div>
+            </div>
+          </div>
+
           <button type="submit" className="w-full py-3.5 bg-gradient-to-b from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-2xl font-bold text-[15px] shadow-lg shadow-blue-500/20 transition-all active:scale-[0.98] mt-4">
             Continuer — Ajouter les membres
           </button>
+
+          <p className="text-center text-xs text-gray-400 mt-4">
+            Deja un compte ? <button type="button" onClick={() => setStep('login')} className="text-blue-600 font-semibold hover:text-blue-700">Se connecter</button>
+          </p>
         </form>
       </div>
     );
@@ -301,6 +403,12 @@ export default function ProRegister({ onDone }: Props) {
         <p className="text-sm text-gray-800 font-semibold">{nomEquipe}</p>
         <p className="text-xs text-gray-500">{unite} — {membres.length} membres</p>
         <p className="text-xs text-gray-500">Chef: {chefGrade} {chefPrenoms} {chefNom}</p>
+      </div>
+
+      <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-5 text-center">
+        <p className="text-[10px] text-blue-600 font-bold uppercase tracking-wider mb-1">Votre code equipe (a retenir)</p>
+        <p className="text-xl font-mono font-extrabold text-blue-800 tracking-widest">EQ-{nomEquipe.replace(/\s/g, '').substring(0, 6).toUpperCase()}</p>
+        <p className="text-[10px] text-blue-500 mt-1">Utilisez ce code + votre mot de passe pour vous reconnecter</p>
       </div>
 
       <div className="bg-amber-50 border border-amber-300 rounded-2xl px-4 py-2.5 mb-4 text-center">
